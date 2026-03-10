@@ -22,9 +22,9 @@ Fabric API を使ったアプリケーション開発のベストプラクティ
 
 ## 調査手順
 
-1. #tool:publicapis_bestpractices_get でトピック別のベストプラクティスを取得する
-2. #tool:publicapis_bestpractices_examples_get で具体的なリクエスト/レスポンス例を取得する
-3. 必要に応じて #tool:microsoft_docs_search で関連ドキュメントを補完する
+1. `publicapis_bestpractices_get` でトピック別のベストプラクティスを取得する
+2. `publicapis_bestpractices_examples_get` で具体的なリクエスト/レスポンス例を取得する
+3. 必要に応じて `microsoft_docs_search` で関連ドキュメントを補完する
 
 ## 回答の形式
 

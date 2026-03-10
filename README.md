@@ -2,8 +2,8 @@
 
 GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境を構築するテンプレート。
 
-> **🚀 Fabric ポータルを一切開かずに、デモ環境を完全自動構築。**
-> GHCP チャット内でワークスペース作成から Data Agent 構築まですべて完結します。
+> **🚀 GHCP チャット内で、Lakehouse 作成からデータ投入・テーブル変換まで自動実行。**
+> Semantic Model ・ Data Agent のアイテム作成も GHCP 内で完了します。
 
 ---
 
@@ -15,7 +15,7 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 - Semantic Model 作成（TMDL 定義付き: テーブル・リレーションシップ・メジャー）
 - Data Agent 作成（自然言語でデータに質問）
 
-**すべて GHCP チャット内で完結。Fabric ポータルを開く必要はありません。**
+**主要な構築作業は GHCP チャット内で完結。ポータルでの設定は最小限です。**
 
 ---
 
@@ -73,14 +73,14 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 ③ 設計書 + 変換済み CSV を生成（ローカル）
    ↓
 ④ MCP ツール + Fabric REST API で自動デプロイ
-   ├── ワークスペース作成
-   ├── Lakehouse 作成
-   ├── CSV アップロード
-   ├── Tables LoadTable API で CSV → Delta 変換
-   ├── Semantic Model 作成（TMDL 定義付き）
-   └── Data Agent 作成
+   ├── ワークスペース選択または作成
+   ├── Lakehouse 作成（MCP）
+   ├── CSV アップロード（MCP）
+   ├── CSV → Delta 変換（REST API）
+   ├── Semantic Model 作成（MCP）
+   └── Data Agent 作成（MCP）
    ↓
-⑤ 完了 — Fabric ポータルを開く必要なし
+⑤ ポータルで Semantic Model + Data Agent の設定を補完
 ```
 
 ### 始め方
@@ -111,9 +111,11 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 6. GHCP が自動で:
    - 設計書 + 変換済みサンプルデータを生成
    - **MCP ツール + Fabric REST API で Fabric にデプロイ**
-   - CSV → Delta 変換、Semantic Model 定義（TMDL）、Data Agent まで自動実行
+   - Lakehouse 作成、CSV アップロード、CSV → Delta 変換、Semantic Model・Data Agent 作成まで自動実行
 
-> **Fabric ポータルの操作は一切不要です。**
+7. Fabric ポータルで残りの設定:
+   - Semantic Model → テーブル追加 + リレーションシップ設定（TMDL 自動適用が成功した場合は不要）
+   - Data Agent → データソースとして Semantic Model を選択
 
 ### 生成されるもの
 
@@ -138,8 +140,8 @@ Fabric 環境:
 |---|---|---|
 | Lakehouse | データ保存（ファクト＋ディメンション） | MCP で自動作成 |
 | SQL Analytics Endpoint | Delta テーブルへの SQL アクセス | Lakehouse と同時に自動作成 |
-| Semantic Model | スタースキーマの分析モデル（Direct Lake） | MCP + TMDL 定義で自動構成 |
-| Data Agent | 自然言語でデータに質問 | MCP で自動作成 |
+| Semantic Model | スタースキーマの分析モデル（Direct Lake） | MCP で作成 → ポータルで設定補完 |
+| Data Agent | 自然言語でデータに質問 | MCP で作成 → ポータルでデータソース選択 |
 
 ---
 
@@ -147,6 +149,8 @@ Fabric 環境:
 
 | 制約 | 詳細 |
 |---|---|
+| Semantic Model の設定 | MCP でアイテム作成後、テーブル追加・リレーションシップ・メジャーはポータルで設定（TMDL 自動適用成功時は不要） |
+| Data Agent のデータソース | MCP でアイテム作成後、ポータルで Semantic Model をデータソースとして選択 |
 | Data Agent の対応範囲 | Semantic Model または Lakehouse に対する自然言語クエリのみ（現時点ではリアルタイムデータ非対応） |
 | ワークロード名・item-type | Fabric API の仕様変更に左右されるため、構築前に必ず `publicapis_list` で確認する |
 

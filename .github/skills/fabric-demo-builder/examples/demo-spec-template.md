@@ -155,17 +155,24 @@ dim_[xxx] ── fact_[xxx] ── dim_[yyy]
 
 ## 6. 構築手順
 
-> **すべて GHCP 内で完結。Fabric ポータルの操作は不要。**
+### GHCP 内で自動実行
 
-| Step | 操作 | MCP ツール / API |
+| Step | 操作 | ツール / API |
 |---|---|---|
-| 1 | ワークスペース作成 | `onelake_workspace_list` + 新規作成 |
-| 2 | Lakehouse 作成 | `onelake_item_create` (Lakehouse) |
-| 3 | CSV アップロード | `onelake_upload_file` |
-| 4 | CSV → Delta 変換 | Lakehouse REST API `Tables_LoadTable` |
-| 5 | Semantic Model 作成 | `onelake_item_create` (SemanticModel) + TMDL 定義 |
-| 6 | Data Agent 作成 | `onelake_item_create` (DataAgent) |
-| 7 | 動作検証 | 代表質問セットで回答品質を確認 |
+| 1 | ワークスペース選択 or 作成 | MCP `onelake_workspace_list` + REST API |
+| 2 | Lakehouse 作成 | MCP `onelake_item_create` |
+| 3 | CSV アップロード | MCP `onelake_upload_file` |
+| 4 | CSV → Delta 変換 | ターミナルから Fabric REST API `Tables_LoadTable` |
+| 5 | Semantic Model 作成 | MCP `onelake_item_create` |
+| 6 | Data Agent 作成 | MCP `onelake_item_create` |
+
+### Fabric ポータルで設定補完
+
+| Step | 操作 |
+|---|---|
+| 1 | Semantic Model → モデル レイアウトでテーブル追加 + リレーションシップ設定（TMDL 自動適用成功時は不要） |
+| 2 | Data Agent → データソースとして Semantic Model を選択 |
+| 3 | 代表質問セットで動作検証 |
 
 ---
 

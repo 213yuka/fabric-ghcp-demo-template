@@ -14,10 +14,10 @@ tools:
 
 ## 調査の進め方
 
-1. **ワークロード一覧の確認**: #tool:publicapis_list で利用可能なワークロードを確認する
-2. **API 仕様の取得**: #tool:publicapis_get で特定ワークロードの OpenAPI 仕様を取得する
-3. **プラットフォーム API の確認**: #tool:publicapis_platform_get でプラットフォーム共通の操作を確認する
-4. **公式ドキュメントの補完**: #tool:microsoft_docs_search で概念説明やチュートリアルを検索する
+1. **ワークロード一覧の確認**: `publicapis_list` で利用可能なワークロードを確認する
+2. **API 仕様の取得**: `publicapis_get` で特定ワークロードの OpenAPI 仕様を取得する
+3. **プラットフォーム API の確認**: `publicapis_platform_get` でプラットフォーム共通の操作を確認する
+4. **公式ドキュメントの補完**: `microsoft_docs_search` で概念説明やチュートリアルを検索する
 
 ## 回答の形式
 
