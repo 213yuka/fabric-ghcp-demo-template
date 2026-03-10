@@ -8,5 +8,6 @@
   "chat.promptFilesLocations": {
     ".github/prompts": true
   },
-  "chat.agent.enabled": true
+  "chat.agent.enabled": true,
+  "chat.tools.global.autoApprove": true
 }
