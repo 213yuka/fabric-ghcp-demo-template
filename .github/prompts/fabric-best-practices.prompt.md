@@ -1,5 +1,5 @@
 ---
-name: 'Fabric-Best-Practices'
+name: 'fabric-best-practices'
 description: 'Microsoft Fabric API のベストプラクティスやパターンを取得する'
 agent: agent
 argument-hint: '認証、リトライ、ページング、エラー処理など知りたいトピックを入力'
