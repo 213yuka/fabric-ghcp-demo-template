@@ -29,12 +29,16 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 | GitHub Copilot | 拡張機能インストール済み（Agent モード対応） |
 | Node.js | 20 LTS 以降（Fabric MCP サーバーの実行に必要） |
 
+**推奨拡張機能（オプション）:**
+- [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
+
 ### Fabric 権限
 
 | 項目 | 要件 |
 |---|---|
 | Fabric ワークスペース | **共同作成者** 以上のロール |
 | Fabric 容量 | F2 以上（または Power BI Premium Per User） |
+| Fabric 容量の状態 | **起動済み（アクティブ）**であること（一時停止中はデプロイ失敗する） |
 | Microsoft Entra ID | Fabric MCP サーバーの認証に必要 |
 
 ### MCP サーバー

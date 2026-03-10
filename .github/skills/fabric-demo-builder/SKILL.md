@@ -225,7 +225,7 @@ Fabric ポータルを開く必要はない。
 
 | 失敗ケース | 対処 |
 |---|---|
-| `onelake_item_create` がエラー | `publicapis_list` で item-type が正しいか再確認。ワークスペース権限を確認 |
+| `onelake_item_create` がエラー | `publicapis_list` で item-type が正しいか再確認。ワークスペース権限を確認。Fabric 容量が起動済み（アクティブ）か確認 |
 | `onelake_upload_file` がエラー | Lakehouse が正常に作成されたか `onelake_item_list` で確認。ファイルパスを確認 |
 | `Tables_LoadTable` がエラー | CSV ファイル名のパターン・パスを確認。LRO 完了前にタイムアウトした場合はリトライ |
 | Semantic Model TMDL エラー | TMDL 構文を確認。テーブル名が Delta テーブルと一致しているか確認 |
