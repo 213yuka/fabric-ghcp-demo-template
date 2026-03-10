@@ -1,35 +1,32 @@
 # Fabric GHCP デモテンプレート
 
-このワークスペースは **GitHub Copilot (Agent モード) + MCP サーバー** を使って、Microsoft Fabric のデモ環境を構築するためのテンプレートです。
+GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ環境を **GHCP 内からすべて構築** するテンプレート。
 
 ## 基本方針
 
 - 応答は **日本語** で行う
-- Microsoft Fabric に関する情報は、必ず **Fabric MCP サーバー** のツールを使って最新の公式情報を取得する
-- Microsoft 技術全般のドキュメントは **MS Learn MCP サーバー** のツールを使って参照する
-- 推測で回答せず、MCP ツールで得た情報に基づいて回答する
+- Fabric の情報は **Fabric MCP サーバー** のツールで取得する（推測しない）
+- Fabric 環境の構築は **MCP OneLake ツールで GHCP 内から直接実行** する
+- セマンティックモデルは **スタースキーマ** で設計する
+- Microsoft ドキュメントは **MS Learn MCP サーバー** で検索する
 
-## 利用可能な MCP サーバー
+## MCP サーバー
 
-| サーバー名 | 種類 | 用途 |
-|---|---|---|
-| `fabric-mcp-server` | ローカル (npx) | Fabric の API 仕様、アイテム定義、ベストプラクティスの取得 |
-| `microsoft-learn` | リモート (HTTP) | Microsoft 公式ドキュメントの検索・取得、コードサンプル検索 |
+| サーバー名 | 用途 |
+|---|---|
+| `fabric-mcp-server` | API 仕様の参照 + OneLake ツールで Fabric 環境を直接操作 |
+| `microsoft-learn` | Microsoft 公式ドキュメントの検索・取得 |
 
-## 前提条件
+## デモの標準構成
 
-このテンプレートを使うには以下が必要です:
+| ワークロード | 用途 |
+|---|---|
+| Lakehouse | データ保存（ファクト＋ディメンション） |
+| Notebook | ETL（CSV → Delta テーブル） |
+| Semantic Model | スタースキーマの分析モデル |
+| Data Agent | 自然言語でデータに質問 |
 
-1. **Visual Studio Code** (最新版)
-2. **GitHub Copilot** 拡張機能 (Copilot Chat 含む)
-3. **Node.js 20 LTS 以降** — Fabric MCP サーバーの実行に必要
-   - `node --version` で確認
-   - `npx --version` で確認
-4. **GitHub Copilot のライセンス** (Individual, Business, Enterprise いずれか)
+## 使い方
 
-## デモ構築の進め方
-
-1. Agent モードでチャットを開く
-2. `/fabric-demo-create` プロンプトを使い、シナリオ（製造・教育・小売など）を指定する
-3. Copilot が MCP ツールを使って Fabric の API 仕様やベストプラクティスを取得しながら、デモ設計を支援する
-4. 必要に応じて `/fabric-explore` や `/fabric-best-practices` で追加調査する
+1. `/fabric-demo-create` を実行して 3 つの質問に答える
+2. Copilot が設計書 + サンプルデータを生成し、MCP ツールで Fabric に直接デプロイする

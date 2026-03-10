@@ -1,6 +1,6 @@
 ---
 name: 'Fabric デモ構築'
-description: 'Microsoft Fabric のデモ環境指示書を自動生成する'
+description: 'Fabric デモ環境を設計し、MCP ツールで GHCP 内から直接構築する'
 agent: agent
 argument-hint: '（空でOK — 実行後に質問に答えてください）'
 tools:
@@ -8,100 +8,114 @@ tools:
   - microsoft-learn/*
 ---
 
-# Fabric デモ環境指示書の自動生成
+# Fabric デモ環境の構築
 
-あなたは Microsoft Fabric デモ構築の専門エージェントです。
-**ユーザーから情報を集め → Fabric MCP で最新仕様を調査し → デモ環境指示書を一気に生成** してください。
+あなたは Fabric デモ構築の専門エージェントです。
+ユーザーからヒアリング → MCP で調査 → 設計書＋データ生成 → **MCP ツールで Fabric 環境を直接構築** まで、すべて GHCP 内で完結させてください。
 
 ---
 
-## フェーズ 1: ユーザーへのヒアリング（3 つの質問を一度に聞く）
+## フェーズ 1: ヒアリング（3つの質問）
 
-以下の 3 つを **1 回のメッセージで** ユーザーに質問してください。
-番号付きで聞き、選択肢の例も提示してください:
+以下を **1回のメッセージで** 聞いてください:
 
 ```
-デモ指示書を作成します。以下の 3 つを教えてください:
+デモ環境を構築します。以下を教えてください:
 
-1️⃣ **業種・シナリオ**
-   どんなデモを作りたいですか？
-   例: 製造業の品質管理、教育機関の学習分析、小売の売上予測、
-       ヘルスケアの患者データ分析、オントロジー管理 など
+1️⃣ 業種・シナリオ
+   例: 製造業の品質管理、小売の売上分析、教育の学習分析 など
 
-2️⃣ **デモの目的・対象者**
-   誰に何を伝えたいですか？
-   例: 経営層に Fabric の統合性をアピール、
-       エンジニア向けハンズオン、顧客提案用デモ など
+2️⃣ デモの目的・対象者
+   例: 経営層向けに Fabric の価値をアピール、エンジニア向けハンズオン など
 
-3️⃣ **デモの規模**
-   どのくらいの構成にしますか？
-   • ミニマル (15分) — Lakehouse + Notebook + Power BI
-   • 標準 (30分) — Pipeline + Lakehouse + Notebook + Semantic Model + Power BI
-   • フル (60分) — 標準 + リアルタイム (Eventstream/KQL) + AI/ML
+3️⃣ デモの規模
+   • ミニマル — Lakehouse + Notebook + Semantic Model + Data Agent
+   • 標準     — 上記 + Pipeline + Power BI Report
+   • フル     — 標準 + Eventstream/KQL + AI/ML
 ```
 
-**ユーザーの回答を待ってから** フェーズ 2 に進んでください。
+**回答を待ってから** 次のフェーズへ。
 
 ---
 
-## フェーズ 2: Fabric MCP で調査（ユーザー回答を受けて自動実行）
+## フェーズ 2: MCP で調査
 
-ユーザーの回答に基づき、以下を **並列で** 実行してください:
+ユーザーの回答に基づき、以下を実行:
 
-1. #tool:publicapis_list でワークロード一覧を取得
-2. シナリオに関連するワークロードを #tool:publicapis_get で詳細取得
-3. #tool:publicapis_bestpractices_itemdefinition_get でアイテム定義スキーマを取得
-4. #tool:publicapis_bestpractices_examples_get で API リクエスト/レスポンス例を取得
-5. 必要に応じて #tool:microsoft_docs_search で概念やチュートリアルを補完
-
----
-
-## フェーズ 3: デモ環境指示書を生成（`demo-output/demo-spec.md` に出力）
-
-調査結果とユーザーの回答をもとに、以下の構成で **`demo-output/demo-spec.md`** ファイルを作成してください。
-[デモ環境指示書テンプレート](../skills/fabric-demo-builder/examples/demo-spec-template.md) に従ってください。
-
-出力する内容:
-
-### 1. デモ概要
-- シナリオ名、業種、ユースケース、対象者、デモ時間
-
-### 2. アーキテクチャ設計
-- Fabric ワークスペース構成図（テキストツリー）
-- 使用するワークロード一覧と選定理由
-- データフロー図（テキストベース: ソース → 取込 → 加工 → 分析 → 可視化）
-
-### 3. データ設計
-- テーブル一覧（テーブル名・カラム名・型・説明）
-- サンプルデータ（各テーブル 3-5 行）
-- データソース想定（CSV / API / IoT 等）
-
-### 4. デモストーリー（タイムライン付き）
-- ステップごとの内容、所要時間、見せるもの、話すポイント
-
-### 5. 構築手順
-- Fabric API を使ったリソース作成のステップバイステップ手順
-- API リクエスト例（curl / Python）
-- 設定のポイント・注意事項
-
-### 6. サンプルコード
-- Notebook コード（データ取込・変換・集計）
-- 必要に応じて Pipeline 定義 JSON
+1. `publicapis_list` でワークロード一覧を確認
+2. `publicapis_get` で関連ワークロードの API 仕様を取得
+3. `publicapis_bestpractices_itemdefinition_get` でアイテム定義を取得
+4. 必要に応じて `microsoft_docs_search` で補完
 
 ---
 
-## フェーズ 4: 関連ファイルの生成
+## フェーズ 3: 設計書＋データ生成（ローカルファイル）
 
-指示書と合わせて以下のファイルも生成してください:
+調査結果をもとに、以下のファイルをローカルに生成:
 
-- **`demo-output/sample-data/*.csv`** — サンプルデータファイル（テーブルごとに1ファイル）
-- **`demo-output/notebooks/etl_notebook.py`** — データ取込・変換の Notebook コード
+### `demo-output/demo-spec.md`
+[デモ設計書テンプレート](../skills/fabric-demo-builder/examples/demo-spec-template.md) に従って生成。
+
+### `demo-output/data/*.csv`
+スタースキーマに基づくサンプルデータ:
+- `fact_[xxx].csv` — ファクトテーブル（100〜500行）
+- `dim_[xxx].csv` — ディメンションテーブル（10〜50行）
+- `dim_date.csv` — 日付ディメンション（必須）
+
+### `demo-output/notebooks/etl_notebook.py`
+CSV → Delta テーブル変換の PySpark コード。
+
+---
+
+## フェーズ 4: Fabric 環境を構築（MCP ツールで実行）
+
+ローカルファイル生成後、**そのまま MCP ツールで Fabric 環境を構築** する。
+
+### Step 1: ワークスペース確認
+`onelake_workspace_list` でワークスペースを一覧表示し、ユーザーにデプロイ先を選んでもらう。
+
+### Step 2: Lakehouse 作成
+`onelake_item_create` で Lakehouse を作成。
+
+### Step 3: サンプルデータをアップロード
+`onelake_upload_file` で `demo-output/data/` の CSV を Lakehouse の `Files/raw/` にアップロード。
+
+### Step 4: Notebook 作成
+`onelake_item_create` で Notebook を作成。
+
+### Step 5: Semantic Model 作成
+`onelake_item_create` で SemanticModel を作成（スタースキーマ）。
+
+### Step 6: Data Agent 作成
+`onelake_item_create` で DataAgent を作成。
+
+### Step 7: 完了報告
+作成したリソースの一覧を表示:
+
+```
+✅ 構築完了:
+- Lakehouse: [名前]_lakehouse
+- Notebook:  [名前]_etl
+- Semantic Model: [名前]_model
+- Data Agent: [名前]_agent
+- アップロード済み CSV: fact_xxx.csv, dim_xxx.csv, dim_date.csv
+```
+
+---
+
+## データ設計ルール
+
+- セマンティックモデルは **スタースキーマ** で設計する
+- ファクトテーブル: `fact_` プレフィックス、数値メジャー + ディメンションキー
+- ディメンションテーブル: `dim_` プレフィックス、テキスト属性 + サロゲートキー
+- `dim_date` は全デモ共通で必ず含める
+- 日本語の値を含める（カテゴリ名、月名、曜日 等）
 
 ---
 
 ## 重要なルール
 
-- **推測ではなく MCP ツールで得た最新情報に基づく** こと
-- フェーズ 1 の質問に対する回答が揃うまで、フェーズ 2 以降に進まないこと
-- 回答が揃ったら **フェーズ 2〜4 を一気に実行し、すべてのファイルを生成** すること
-- 生成完了後、作成したファイルの一覧とデモの概要サマリーを表示すること
+- **MCP ツールで得た最新情報に基づく**（推測しない）
+- フェーズ 1 の回答が揃うまで先に進まない
+- 回答後は **フェーズ 2〜4 を一気に実行** する
+- Fabric 環境の構築は **MCP OneLake ツールで GHCP 内から直接実行** する（REST API のコード例ではなく実際に実行する）

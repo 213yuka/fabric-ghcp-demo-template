@@ -1,177 +1,177 @@
-# デモ環境指示書テンプレート
+# デモ設計書テンプレート
 
-このテンプレートに沿って `demo-output/demo-spec.md` を生成してください。
-`[...]` の部分をユーザーの回答と MCP 調査結果で埋めてください。
+`[...]` をユーザー回答と MCP 調査結果で埋めて `demo-output/demo-spec.md` を生成する。
 
 ---
 
-# デモ環境指示書: [シナリオ名]
+# デモ設計書: [シナリオ名]
 
 > 生成日: [日付]
-> 生成元: fabric-ghcp-demo-template / fabric-demo-create
 
 ---
 
-## 1. デモ概要
+## 1. 概要
 
 | 項目 | 内容 |
 |---|---|
-| シナリオ名 | [例: 製造ライン品質管理ダッシュボード] |
+| シナリオ | [例: 製造ライン品質管理] |
 | 業種 | [例: 製造] |
-| ユースケース | [例: IoT センサーデータによるリアルタイム品質監視] |
-| 対象者 | [例: 経営層・品質管理チーム] |
-| デモ時間 | [例: 30分] |
-| デモ規模 | [ミニマル / 標準 / フル] |
-| デモのゴール | [例: Fabric の統合データ分析基盤としての価値を示す] |
+| 対象者 | [例: 経営層] |
+| ゴール | [例: Fabric の統合分析基盤としての価値を示す] |
 
 ---
 
-## 2. アーキテクチャ設計
-
-### 使用ワークロード
-
-| ワークロード | 用途 | 選定理由 |
-|---|---|---|
-| [例: Lakehouse] | [データ保存] | [構造化・非構造化データの統合管理] |
-| [例: Notebook] | [データ加工] | [PySpark による柔軟な変換処理] |
-| [例: Data Pipeline] | [データ取込] | [スケジュール実行によるバッチ取込] |
-| [例: Semantic Model] | [分析モデル] | [Power BI 向けデータモデリング] |
-| [例: Power BI Report] | [可視化] | [インタラクティブなダッシュボード] |
+## 2. アーキテクチャ
 
 ### ワークスペース構成
 
 ```
-ワークスペース: [シナリオ名]-demo-ws
+[シナリオ名]-demo-ws/
 ├── Lakehouse: [名前]_lakehouse
 │   ├── Tables/
-│   │   ├── [テーブル1]
-│   │   ├── [テーブル2]
-│   │   └── [テーブル3]
-│   └── Files/
-│       └── raw/
+│   │   ├── fact_[xxx]
+│   │   ├── dim_[xxx]
+│   │   ├── dim_[yyy]
+│   │   └── dim_date
+│   └── Files/raw/
+│       ├── fact_[xxx].csv
+│       ├── dim_[xxx].csv
+│       └── dim_date.csv
 ├── Notebook: [名前]_etl
-├── Data Pipeline: [名前]_pipeline
-├── Semantic Model: [名前]_model
-└── Power BI Report: [名前]_dashboard
+├── Semantic Model: [名前]_model   ← スタースキーマ
+└── Data Agent: [名前]_agent       ← 自然言語クエリ
 ```
 
 ### データフロー
 
 ```
-[データソース]  ──→  Data Pipeline  ──→  Lakehouse (raw)
-                                            │
-                                        Notebook (ETL)
-                                            │
-                                        Lakehouse (curated tables)
-                                            │
-                                        Semantic Model
-                                            │
-                                        Power BI Report
+CSV (Files/raw/)
+  ↓  Notebook (PySpark)
+Delta Tables (fact_ / dim_)
+  ↓
+Semantic Model (スタースキーマ)
+  ↓
+Data Agent (自然言語で質問)
 ```
 
 ---
 
-## 3. データ設計
+## 3. データ設計（スタースキーマ）
 
-### テーブル一覧
+### ER 図
 
-#### テーブル: [テーブル名1]
+```
+           dim_date
+              │
+dim_[xxx] ── fact_[xxx] ── dim_[yyy]
+              │
+           dim_[zzz]
+```
 
-| カラム名 | 型 | 説明 |
+### ファクトテーブル: fact_[xxx]
+
+| カラム | 型 | 説明 |
 |---|---|---|
-| [例: id] | string | 一意識別子 |
-| [例: timestamp] | datetime | 記録日時 |
-| [例: value] | float | 計測値 |
-| [例: category] | string | カテゴリ |
+| [xxx]_key | int | サロゲートキー |
+| date_key | int | → dim_date |
+| [dim]_key | int | → dim_[xxx] |
+| [メジャー名] | float/int | [説明] |
 
-**サンプルデータ (3-5行):**
+### ディメンション: dim_[xxx]
 
-| id | timestamp | value | category |
-|---|---|---|---|
-| [データ] | [データ] | [データ] | [データ] |
+| カラム | 型 | 説明 |
+|---|---|---|
+| [xxx]_key | int | サロゲートキー |
+| [属性名] | string | [説明] |
 
-#### テーブル: [テーブル名2]
+### ディメンション: dim_date
 
-(同様の形式で繰り返す)
-
-### データソース
-
-| ソース名 | 形式 | 件数 | 更新頻度 |
-|---|---|---|---|
-| [例: sensor_data] | CSV | 1,000 | バッチ (日次) |
-| [例: master_data] | CSV | 50 | 静的 |
-
----
-
-## 4. デモストーリー
-
-| # | ステップ | 内容 | 時間 | 見せるもの | 話すポイント |
-|---|---|---|---|---|---|
-| 1 | 導入 | [課題とゴールの説明] | [3分] | スライド | [なぜ Fabric か] |
-| 2 | データ取込 | [Pipeline でデータを投入] | [5分] | Pipeline 画面 | [統合されたデータ基盤] |
-| 3 | データ加工 | [Notebook で変換処理] | [7分] | Notebook 実行 | [Spark の柔軟性] |
-| 4 | 分析・可視化 | [Power BI レポートを表示] | [10分] | ダッシュボード | [リアルタイムな意思決定] |
-| 5 | まとめ | [Fabric の価値を要約] | [5分] | スライド | [次のステップ] |
+| カラム | 型 | 説明 |
+|---|---|---|
+| date_key | int | 20250101 形式 |
+| date | date | 日付 |
+| year | int | 年 |
+| month | int | 月 |
+| month_name | string | 月名（日本語） |
+| quarter | string | Q1〜Q4 |
+| day_of_week | string | 曜日（日本語） |
 
 ---
 
-## 5. 構築手順
+## 4. サンプルデータ
 
-### Step 1: ワークスペースの作成
+### fact_[xxx] (抜粋 3-5行)
 
-[Fabric API によるワークスペース作成手順]
+| [key] | date_key | [dim_key] | [メジャー] |
+|---|---|---|---|
+| ... | ... | ... | ... |
+
+### dim_[xxx] (抜粋 3-5行)
+
+| [key] | [属性] |
+|---|---|
+| ... | ... |
+
+---
+
+## 5. GHCP 実行手順
+
+以下を Copilot チャット内で MCP ツールを使って実行する:
+
+### Step 1: ワークスペース確認
+- `onelake_workspace_list` でワークスペース一覧を表示
+- ユーザーにデプロイ先を選んでもらう
+
+### Step 2: Lakehouse 作成
+- `onelake_item_create` — display-name: `[名前]_lakehouse`, item-type: `Lakehouse`
+
+### Step 3: CSV アップロード
+- `onelake_upload_file` で `demo-output/data/` 内の CSV を Lakehouse にアップロード
+  - file-path: `Files/raw/fact_[xxx].csv`
+  - file-path: `Files/raw/dim_[xxx].csv`
+  - file-path: `Files/raw/dim_date.csv`
+
+### Step 4: Notebook 作成
+- `onelake_item_create` — display-name: `[名前]_etl`, item-type: `Notebook`
+
+### Step 5: Semantic Model 作成
+- `onelake_item_create` — display-name: `[名前]_model`, item-type: `SemanticModel`
+
+### Step 6: Data Agent 作成
+- `onelake_item_create` — display-name: `[名前]_agent`, item-type: `DataAgent`
+
+---
+
+## 6. ETL Notebook コード
 
 ```python
-# API リクエスト例
-import requests
+# --- CSV を読み込んで Delta テーブルに変換 ---
 
-url = "https://api.fabric.microsoft.com/v1/workspaces"
-headers = {"Authorization": "Bearer <token>"}
-body = {"displayName": "[ワークスペース名]"}
+# ファクトテーブル
+df_fact = spark.read.option("header", True).option("inferSchema", True) \
+    .csv("Files/raw/fact_[xxx].csv")
+df_fact.write.mode("overwrite").format("delta").saveAsTable("fact_[xxx]")
 
-response = requests.post(url, headers=headers, json=body)
-```
+# ディメンション
+df_dim = spark.read.option("header", True).option("inferSchema", True) \
+    .csv("Files/raw/dim_[xxx].csv")
+df_dim.write.mode("overwrite").format("delta").saveAsTable("dim_[xxx]")
 
-### Step 2: Lakehouse の作成
+# 日付ディメンション
+df_date = spark.read.option("header", True).option("inferSchema", True) \
+    .csv("Files/raw/dim_date.csv")
+df_date.write.mode("overwrite").format("delta").saveAsTable("dim_date")
 
-[Lakehouse 作成の API 呼び出し]
-
-### Step 3: データの投入
-
-[サンプルデータのアップロード手順]
-
-### Step 4: Notebook の作成と実行
-
-[ETL Notebook の作成手順]
-
-### Step 5: Semantic Model と Power BI レポート
-
-[レポート構築の手順]
-
-### 注意事項
-
-- [認証・権限に関する注意]
-- [キャパシティ要件]
-- [その他の前提条件]
-
----
-
-## 6. サンプルコード
-
-### ETL Notebook (`demo-output/notebooks/etl_notebook.py`)
-
-```python
-# [Notebook のコード全体をここに記載]
+# --- 確認 ---
+display(spark.sql("SELECT * FROM fact_[xxx] LIMIT 5"))
+display(spark.sql("SELECT * FROM dim_[xxx] LIMIT 5"))
 ```
 
 ---
 
 ## 付録
 
-### 使用した Fabric API 仕様
+### 調査に使った MCP ツール
 
-- [調査した API のサマリー — MCP ツールの調査結果に基づく]
-
-### 参考ドキュメント
-
-- [MS Learn から取得した関連ドキュメントへのリンク]
+- [publicapis_list / publicapis_get で取得した情報のサマリー]
+- [bestpractices_itemdefinition_get で取得したスキーマ情報]

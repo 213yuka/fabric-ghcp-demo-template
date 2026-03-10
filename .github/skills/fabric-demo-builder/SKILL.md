@@ -1,144 +1,122 @@
 ---
 name: fabric-demo-builder
 description: >
-  Microsoft Fabric のデモ環境を構築するための専門スキル。
-  業種別シナリオ（製造・教育・小売・ヘルスケア・金融・オントロジーなど）の
-  デモ設計、ワークスペース構成、サンプルデータ生成、Power BI レポート設計を支援する。
-  Fabric MCP サーバーと MS Learn MCP サーバーを活用して、正確な API 仕様に基づいた
-  デモ環境を構築する。WHEN: Fabric デモ、デモ環境、ワークスペース構成、
-  サンプルデータ、デモシナリオ、ハンズオン資料。
+  Microsoft Fabric のデモ環境を GHCP 内で構築するスキル。
+  Fabric MCP の OneLake ツールでワークスペース確認・Lakehouse 作成・
+  データ投入・Semantic Model・Data Agent まですべて Copilot 内で完結する。
+  データモデルはスタースキーマで設計する。
+  WHEN: Fabric デモ、デモ環境、ワークスペース構成、サンプルデータ、デモシナリオ。
 ---
 
 # Fabric デモ構築スキル
 
-Microsoft Fabric のデモ環境を構築するための専門知識と手順をまとめたスキルです。
+Fabric MCP の OneLake ツールを使って、**GHCP 内ですべて完結** するデモ構築スキル。
 
-## デモ構築の全体フロー
+## 全体フロー
 
 ```
-1. シナリオ定義
+1. ヒアリング（業種・目的・規模）
    ↓
-2. ワークロード選定
+2. MCP で API 仕様を調査
    ↓
-3. アーキテクチャ設計
+3. デモ設計書 + サンプルデータを生成（ローカル）
    ↓
-4. サンプルデータ準備
-   ↓
-5. リソース構築
-   ↓
-6. デモストーリー作成
-   ↓
-7. 動作確認・リハーサル
+4. Fabric 環境を構築（MCP OneLake ツールで実行）
+   ├── ワークスペース確認
+   ├── Lakehouse 作成
+   ├── CSV アップロード
+   ├── Notebook 作成
+   ├── Semantic Model 作成（スタースキーマ）
+   └── Data Agent 作成
 ```
 
-## 1. シナリオ定義のガイドライン
+## ワークロード構成
 
-デモのシナリオは以下の要素を明確にする:
+すべてのデモで以下を **標準構成** とする:
 
-| 要素 | 説明 | 例 |
+| ワークロード | 用途 | MCP ツール |
 |---|---|---|
-| 業種 | デモの対象業種 | 製造、教育、小売、ヘルスケア、金融 |
-| ユースケース | 解決する課題 | 品質管理、学習分析、売上予測、患者データ分析 |
-| 対象者 | デモを見せる相手 | 経営層、データエンジニア、アナリスト |
-| 規模 | デモの大きさ | ミニマル (15分)、標準 (30分)、フル (60分) |
-| ゴール | デモで伝えたいこと | Fabric の統合性、リアルタイム分析、AI 機能 |
+| **Lakehouse** | データ保存（ファクト＋ディメンション） | `onelake_item_create` |
+| **Notebook** | ETL（CSV → Delta テーブル変換） | `onelake_item_create` |
+| **Semantic Model** | スタースキーマの分析モデル | `onelake_item_create` |
+| **Data Agent** | 自然言語でデータに質問できるエージェント | `onelake_item_create` |
 
-シナリオテンプレートは [examples/scenario-template.md](./examples/scenario-template.md) を参照。
+## スタースキーマ設計ルール
 
-## 2. ワークロード選定の判断基準
+セマンティックモデルは必ず **スタースキーマ** で設計する。
 
-### 最小構成（ミニマルデモ）
-- **Lakehouse** + **Notebook** + **Power BI レポート**
-- セットアップ時間: 約15分
-- 用途: Fabric の基本的なデータフローを素早く見せたい場合
+### 構造
 
-### 標準構成
-- **Data Pipeline** + **Lakehouse** + **Notebook** + **Semantic Model** + **Power BI レポート**
-- セットアップ時間: 約30分
-- 用途: ETL からレポーティングまでの一連のフローを見せたい場合
+```
+        dim_date
+           │
+dim_xxx ── fact_xxx ── dim_yyy
+           │
+        dim_zzz
+```
 
-### フル構成
-- 標準構成 + **KQL Database** + **Eventstream** + **ML Model**
-- セットアップ時間: 約60分
-- 用途: リアルタイム処理や AI/ML を含む高度なシナリオ
+### ファクトテーブル（`fact_` プレフィックス）
 
-## 3. サンプルデータ設計のポイント
+- ビジネスイベント（売上、計測、注文 等）を記録する
+- 数値メジャー（金額、数量、値 等）を持つ
+- 各ディメンションへの外部キー（`_key` サフィックス）を持つ
 
-- **リアリティ**: 実際のビジネスに近いカラム名と値にする
-- **サイズ**: デモ用途なら 100-1000 行で十分
-- **多様性**: 集計・フィルタ・グラフ化で差が出るデータにする
-- **日本語対応**: デモ対象に合わせて日本語カラムにも対応
-- **時系列**: 日付カラムを含め、トレンド分析ができるようにする
+### ディメンションテーブル（`dim_` プレフィックス）
 
-## 4. デモストーリーの構成パターン
+- マスタデータ（商品、顧客、日付、拠点 等）
+- テキスト属性（名前、カテゴリ、地域 等）を持つ
+- サロゲートキー（`_key`）を主キーにする
 
-### パターン A: Before / After
-1. 従来の課題を説明（サイロ化、手動作業）
-2. Fabric で統合された姿を見せる
-3. 効果を数値で示す
+### 日付ディメンション（全デモ共通・必須）
 
-### パターン B: データジャーニー
-1. データの発生（IoT センサー、POS、Web ログ等）
-2. データの取り込み（Pipeline / Eventstream）
-3. データの加工（Notebook / Dataflow）
-4. データの分析（SQL / KQL）
-5. データの可視化（Power BI）
-6. データに基づく意思決定
+| カラム | 型 | 例 |
+|---|---|---|
+| date_key | int | 20250101 |
+| date | date | 2025-01-01 |
+| year | int | 2025 |
+| month | int | 1 |
+| month_name | string | 1月 |
+| quarter | string | Q1 |
+| day_of_week | string | 月曜日 |
 
-### パターン C: ライブコーディング
-1. Fabric ワークスペースを一から作成
-2. Lakehouse を構築
-3. Notebook でデータ投入＆変換
-4. Power BI レポートを自動生成
-5. 全工程を Copilot が支援
+## サンプルデータ
 
-## 5. API 活用のベストプラクティス
+- ファクト: 100〜500 行 / ディメンション: 10〜50 行
+- 日本語の値を含める（カテゴリ名、地域名 等）
+- 日付範囲: 直近 3〜6 ヶ月
+- 集計・フィルタで差が出るデータにする
 
-デモ構築時の API 呼び出しでは以下を遵守:
+## MCP 実行手順
 
-- **認証**: Microsoft Entra ID (Azure AD) トークンを使用
-- **リトライ**: 429 (Too Many Requests) 時は `Retry-After` ヘッダーに従う
-- **ページング**: `continuationToken` を使った反復取得
-- **長時間操作**: `Location` ヘッダーのポーリングで完了を待つ
-- **エラー処理**: HTTP ステータスコードに応じた適切なハンドリング
+### Step 1: ワークスペース確認
+`onelake_workspace_list` → ユーザーに使用するワークスペースを選んでもらう
 
-詳細は Fabric MCP の `publicapis_bestpractices_get` ツールで取得可能。
+### Step 2: Lakehouse 作成
+`onelake_item_create` — item-type: `Lakehouse`
 
-## 6. 出力仕様
+### Step 3: CSV アップロード
+`onelake_upload_file` — ファクト・ディメンションの CSV を `Files/raw/` にアップロード
 
-`/fabric-demo-create` の実行結果として、以下のフォルダ構成で成果物を出力する:
+### Step 4: Notebook 作成
+`onelake_item_create` — item-type: `Notebook`
+
+### Step 5: Semantic Model 作成
+`onelake_item_create` — item-type: `SemanticModel`
+
+### Step 6: Data Agent 作成
+`onelake_item_create` — item-type: `DataAgent`
+
+## 出力ファイル
 
 ```
 demo-output/
-├── demo-spec.md          — デモ環境指示書（メイン成果物）
+├── demo-spec.md        — デモ設計書
 ├── data/
-│   ├── [テーブル名1].csv  — サンプルデータ
-│   └── [テーブル名2].csv
+│   ├── fact_xxx.csv    — ファクトテーブル
+│   ├── dim_xxx.csv     — ディメンションテーブル
+│   └── dim_date.csv    — 日付ディメンション
 └── notebooks/
-    └── etl_notebook.py   — ETL 処理の Notebook コード
+    └── etl_notebook.py — CSV → Delta テーブル変換コード
 ```
 
-### demo-spec.md の構成
-
-出力テンプレートは [examples/demo-spec-template.md](./examples/demo-spec-template.md) に従うこと。
-
-主なセクション:
-
-1. **デモ概要** — シナリオ名、業種、対象者、規模、ゴール
-2. **アーキテクチャ設計** — 使用ワークロード一覧、ワークスペース構成図、データフロー図
-3. **データ設計** — テーブル定義（カラム名・型・説明）、サンプルデータ（3-5行）
-4. **デモストーリー** — ステップごとの内容・時間配分・話すポイント
-5. **構築手順** — Fabric API を使った具体的なセットアップ手順とコード
-6. **サンプルコード** — Notebook のコード全体
-
-### サンプルデータ CSV
-
-- UTF-8 (BOM 付き) で出力する
-- ヘッダー行を含める
-- デモで見栄えのする現実的なデータにする（3. サンプルデータ設計のポイント参照）
-
-### Notebook コード
-
-- PySpark で記述する
-- Lakehouse のテーブル読み書きを含める
-- セルごとにコメントで目的を記載する
+テンプレート: [examples/demo-spec-template.md](./examples/demo-spec-template.md)
