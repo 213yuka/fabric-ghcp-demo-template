@@ -53,7 +53,7 @@ Delta Tables (fact_ / dim_)
   ↓  自動
 SQL Analytics Endpoint
   ↓  Direct Lake
-Semantic Model (スタースキーマ、TMDL 定義付き)
+Semantic Model (スタースキーマ、TMSL 定義付き)
   ↓
 Data Agent (自然言語で質問)
 ```

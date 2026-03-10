@@ -556,7 +556,7 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 - **新規ワークスペースには必ず Fabric 容量を割り当てる**（`assignToCapacity`）
 - **Lakehouse**: REST API `POST /v1/workspaces/{id}/lakehouses` で作成する。MCP の `onelake_item_create` は使わない（ワークスペース認識のタイミング問題を回避）
 - **CSV → Delta 変換**: Fabric REST API `Tables_LoadTable` → LRO ポーリングで完了確認
-- **Semantic Model**: REST API で **定義付き**（definition.pbism + model.bim）で作成する。MCP の `onelake_item_create` は使わない
+- **Semantic Model**: REST API で **定義付き**（definition.pbism + model.bim）で **一発作成** する。MCP の `onelake_item_create` は使わない
 - **model.bim は TMSL 形式**（単一 JSON ファイル）を使う。TMDL 形式は使わない
 - **model.bim は PowerShell ハッシュテーブル** で構築し `ConvertTo-Json -Depth 10` で JSON に変換する。`-Depth` が浅いとネストが切り捨てられてエラーになる
 - **definition.pbism**: 最小構成（`version` + `$schema` のみ）を使う。`datasetReference` 等を入れるとエラー
@@ -564,3 +564,16 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 - **LRO 監視**: 202 Accepted が返ったら必ず Location ヘッダーでポーリングして完了を待つ
 - **`onelake_upload_file`**: `local-file-path` は **絶対パス** で指定する
 - **代表質問セット** を必ず設計書に含める
+
+### Semantic Model エラー時の禁止事項
+
+Semantic Model 作成が失敗しても、以下の行動は **絶対にしないこと**:
+
+- ❌ `updateDefinition` で後から定義を適用する（空の SM に TMDL を適用しても動かない）
+- ❌ TMDL 形式（複数ファイル）に切り替える（TMSL model.bim 単一 JSON を使う）
+- ❌ `defaultMode` を `directQuery` や `import` に変える（Lakehouse の場合は必ず `directLake`）
+- ❌ テーブルを 1 つずつ追加する（全テーブル・リレーションシップ・メジャーを含む完全な model.bim を一発で送る）
+- ❌ SM を削除して再作成を繰り返す（エラーメッセージを読んで model.bim を修正する）
+- ❌ Python に切り替える（PowerShell ハッシュテーブル + `ConvertTo-Json -Depth 10` を使う）
+
+**正しいエラー対処**: エラーメッセージを確認 → model.bim のハッシュテーブルを修正 → Step 5 と同じ PowerShell パターンで再実行。
