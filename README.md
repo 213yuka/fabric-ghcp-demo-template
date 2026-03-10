@@ -141,6 +141,7 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 ローカル:
   demo-output/
   ├── demo-spec.md       # 設計書
+  ├── usage-guide.md     # 活用ガイド（質問例・デモシナリオ・トラブルシューティング）
   └── data/              # CSV（スタースキーマ: fact_ + dim_、変換済み）
 
 Fabric 環境:

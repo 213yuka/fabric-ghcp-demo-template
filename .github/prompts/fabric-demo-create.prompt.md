@@ -115,7 +115,18 @@ $dataDir = Join-Path $outputDir "data"
 - 構築手順（MCP + Fabric REST API で完結）
 - **代表質問セット**（5〜10 個）
 - Data Agent 設計（データソース、スコープ、インストラクション案）
+### `demo-output/usage-guide.md`
+[活用ガイドテンプレート](../skills/fabric-demo-builder/examples/usage-guide-template.md) に従って生成。
 
+**必須セクション:**
+- デモ環境の概要（アクセス先、各アイテム名）
+- Data Agent の使い方（アクセス手順、質問のコツ）
+- 代表質問セット（コピペで使える形式）
+- データ構造の説明（テーブル・メジャー・分析の切り口）
+- デモシナリオ例（会議での使い方等）
+- トラブルシューティング
+- Fabric ポータルでの残り設定チェックリスト
+- エージェントインストラクション（コピー用）
 ### `demo-output/data/*.csv`
 スタースキーマに基づく **変換済み** サンプルデータ:
 - `fact_[xxx].csv` — ファクトテーブル（100〜500行、そのままテーブル化可能）
