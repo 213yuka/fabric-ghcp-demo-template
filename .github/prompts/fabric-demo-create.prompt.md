@@ -142,23 +142,20 @@ TMDL 定義は base64 エンコードして `definition.parts[]` に格納する
 ### Step 6: Data Agent 作成
 `onelake_item_create` で DataAgent を作成。
 **Semantic Model が作成済みであること。**
+Data Agent のデータソースとして、作成済みの Semantic Model を指定する。
 
 ### Step 7: 完了報告
-作成したリソースの一覧と、残りの手動ステップを案内:
+作成したリソースの一覧を報告:
 
 ```
-✅ GHCP での構築完了:
+✅ デモ環境の構築が完了しました（Fabric ポータルの操作は不要です）:
 - ワークスペース: demo-[xxx]-[YYYYMMDD]
 - Lakehouse: [名前]_lakehouse
 - Delta テーブル: fact_xxx, dim_xxx, dim_date（変換済み）
 - Semantic Model: [名前]_model（TMDL でテーブル・リレーションシップ・メジャー設定済み）
-- Data Agent: [名前]_agent
+- Data Agent: [名前]_agent（データソース設定済み）
 
-📋 Fabric ポータルでの残りステップ（Data Agent のみ）:
-1. Data Agent → データソースとして Semantic Model を選択
-2. 代表質問セットで動作検証
-
-💡 代表質問セット:
+💡 代表質問セットで動作検証してください:
 - [質問 1]
 - [質問 2]
 - ...
@@ -182,7 +179,8 @@ TMDL 定義は base64 エンコードして `definition.parts[]` に格納する
 - **MCP ツールで得た最新情報に基づく**（推測しない）
 - フェーズ 1 の回答が揃うまで先に進まない
 - 回答後は **フェーズ 2〜4 を一気に実行** する
-- Fabric 環境の構築は **MCP OneLake ツールで GHCP 内から直接実行** する
+- Fabric 環境の構築は **MCP + Fabric REST API で GHCP 内から直接実行** する
+- **Fabric ポータルを一切開かずに完結** させる
 - CSV は **変換済み**（スタースキーマ形式）で生成 — ETL / Notebook は不要
 - **構築順序**: Lakehouse → CSV アップロード → Load Table → Semantic Model (TMDL) → Data Agent
 - **CSV → Delta 変換**: Lakehouse REST API `Tables_LoadTable` で自動実行（ポータル不要）

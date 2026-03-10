@@ -28,7 +28,7 @@
 ```
 [シナリオ名]-demo-ws/
 ├── Lakehouse: [名前]_lakehouse
-│   ├── Tables/          ← ポータルで Load to Tables
+│   ├── Tables/          ← Tables_LoadTable API で自動変換
 │   │   ├── fact_[xxx]
 │   │   ├── dim_[xxx]
 │   │   ├── dim_[yyy]
@@ -48,12 +48,12 @@
 変換済み CSV（スタースキーマ形式）
   ↓  MCP: onelake_upload_file
 Lakehouse Files/
-  ↓  ポータル: Load to Tables
+  ↓  REST API: Tables_LoadTable
 Delta Tables (fact_ / dim_)
   ↓  自動
 SQL Analytics Endpoint
   ↓  Direct Lake
-Semantic Model (スタースキーマ)
+Semantic Model (スタースキーマ、TMDL 定義付き)
   ↓
 Data Agent (自然言語で質問)
 ```
@@ -155,28 +155,17 @@ dim_[xxx] ── fact_[xxx] ── dim_[yyy]
 
 ## 6. 構築手順
 
-### Part A: GHCP 内で実行（MCP ツール）
+> **すべて GHCP 内で完結。Fabric ポータルの操作は不要。**
 
-| Step | 操作 | MCP ツール |
+| Step | 操作 | MCP ツール / API |
 |---|---|---|
-| 1 | ワークスペース確認 | `onelake_workspace_list` |
+| 1 | ワークスペース作成 | `onelake_workspace_list` + 新規作成 |
 | 2 | Lakehouse 作成 | `onelake_item_create` (Lakehouse) |
 | 3 | CSV アップロード | `onelake_upload_file` |
-| 4 | Semantic Model 作成 | `onelake_item_create` (SemanticModel) |
-| 5 | Data Agent 作成 | `onelake_item_create` (DataAgent) |
-
-### Part B: Fabric ポータルで設定
-
-| Step | 操作 | 場所 |
-|---|---|---|
-| 1 | CSV → Delta テーブル変換 | Lakehouse → Files → 右クリック → Load to Tables |
-| 2 | Semantic Model 設定 | SQL Analytics Endpoint → モデル レイアウト |
-|   | - テーブル追加 | fact_ / dim_ テーブルを選択 |
-|   | - リレーションシップ設定 | ファクトの _key → ディメンションの _key |
-|   | - メジャー定義 | [必要なメジャーを列挙] |
-| 3 | Data Agent 設定 | Data Agent → データソース選択 |
-|   | - インストラクション設定 | 上記「インストラクション案」を設定 |
-| 4 | 動作検証 | 代表質問セットで回答品質を確認 |
+| 4 | CSV → Delta 変換 | Lakehouse REST API `Tables_LoadTable` |
+| 5 | Semantic Model 作成 | `onelake_item_create` (SemanticModel) + TMDL 定義 |
+| 6 | Data Agent 作成 | `onelake_item_create` (DataAgent) |
+| 7 | 動作検証 | 代表質問セットで回答品質を確認 |
 
 ---
 

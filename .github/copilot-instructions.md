@@ -6,7 +6,8 @@ GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ
 
 - 応答は **日本語** で行う
 - Fabric の情報は **Fabric MCP サーバー** のツールで取得する（推測しない）
-- Fabric 環境の構築は **MCP OneLake ツールで GHCP 内から直接実行** する
+- Fabric 環境の構築は **MCP + Fabric REST API で GHCP 内から直接実行** する
+- **Fabric ポータルを一切開かずに完結** させる
 - セマンティックモデルは **スタースキーマ** で設計する
 - CSV データは **変換済み（スタースキーマ形式）** で生成する（ETL 不要）
 - Microsoft ドキュメントは **MS Learn MCP サーバー** で検索する
@@ -32,4 +33,4 @@ GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ
 
 1. `/fabric-demo-create` を実行して質問に答える（追加データの添付も可能）
 2. Copilot が設計書 + 変換済みサンプルデータを生成し、MCP ツール + Fabric REST API で Fabric に自動デプロイする
-3. Fabric ポータルで Data Agent のデータソースを選択（唯一の手動ステップ）
+3. 完了 — Fabric ポータルを開く必要なし
