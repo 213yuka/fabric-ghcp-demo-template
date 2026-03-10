@@ -17,7 +17,7 @@
 | シナリオ | [例: 製造ライン品質管理] |
 | 業種 | [例: 製造] |
 | 対象者 | [例: 経営層] |
-| ゴール | [例: Fabric の統合分析基盤としての価値を示す] |
+| ゴール | [例: Data Agent で自然言語からデータ分析できることを示す] |
 
 ---
 
@@ -28,27 +28,31 @@
 ```
 [シナリオ名]-demo-ws/
 ├── Lakehouse: [名前]_lakehouse
-│   ├── Tables/
+│   ├── Tables/          ← ポータルで Load to Tables
 │   │   ├── fact_[xxx]
 │   │   ├── dim_[xxx]
 │   │   ├── dim_[yyy]
 │   │   └── dim_date
-│   └── Files/raw/
-│       ├── fact_[xxx].csv
-│       ├── dim_[xxx].csv
-│       └── dim_date.csv
-├── Notebook: [名前]_etl
-├── Semantic Model: [名前]_model   ← スタースキーマ
+│   ├── Files/
+│   │   ├── fact_[xxx].csv   ← MCP でアップロード
+│   │   ├── dim_[xxx].csv
+│   │   └── dim_date.csv
+│   └── SQL Analytics Endpoint  ← 自動プロビジョニング
+├── Semantic Model: [名前]_model   ← スタースキーマ (Direct Lake)
 └── Data Agent: [名前]_agent       ← 自然言語クエリ
 ```
 
 ### データフロー
 
 ```
-CSV (Files/raw/)
-  ↓  Notebook (PySpark)
+変換済み CSV（スタースキーマ形式）
+  ↓  MCP: onelake_upload_file
+Lakehouse Files/
+  ↓  ポータル: Load to Tables
 Delta Tables (fact_ / dim_)
-  ↓
+  ↓  自動
+SQL Analytics Endpoint
+  ↓  Direct Lake
 Semantic Model (スタースキーマ)
   ↓
 Data Agent (自然言語で質問)
@@ -114,58 +118,28 @@ dim_[xxx] ── fact_[xxx] ── dim_[yyy]
 
 ---
 
-## 5. GHCP 実行手順
+## 5. 構築手順
 
-以下を Copilot チャット内で MCP ツールを使って実行する:
+### Part A: GHCP 内で実行（MCP ツール）
 
-### Step 1: ワークスペース確認
-- `onelake_workspace_list` でワークスペース一覧を表示
-- ユーザーにデプロイ先を選んでもらう
+| Step | 操作 | MCP ツール |
+|---|---|---|
+| 1 | ワークスペース確認 | `onelake_workspace_list` |
+| 2 | Lakehouse 作成 | `onelake_item_create` (Lakehouse) |
+| 3 | CSV アップロード | `onelake_upload_file` |
+| 4 | Semantic Model 作成 | `onelake_item_create` (SemanticModel) |
+| 5 | Data Agent 作成 | `onelake_item_create` (DataAgent) |
 
-### Step 2: Lakehouse 作成
-- `onelake_item_create` — display-name: `[名前]_lakehouse`, item-type: `Lakehouse`
+### Part B: Fabric ポータルで設定
 
-### Step 3: CSV アップロード
-- `onelake_upload_file` で `demo-output/data/` 内の CSV を Lakehouse にアップロード
-  - file-path: `Files/raw/fact_[xxx].csv`
-  - file-path: `Files/raw/dim_[xxx].csv`
-  - file-path: `Files/raw/dim_date.csv`
-
-### Step 4: Notebook 作成
-- `onelake_item_create` — display-name: `[名前]_etl`, item-type: `Notebook`
-
-### Step 5: Semantic Model 作成
-- `onelake_item_create` — display-name: `[名前]_model`, item-type: `SemanticModel`
-
-### Step 6: Data Agent 作成
-- `onelake_item_create` — display-name: `[名前]_agent`, item-type: `DataAgent`
-
----
-
-## 6. ETL Notebook コード
-
-```python
-# --- CSV を読み込んで Delta テーブルに変換 ---
-
-# ファクトテーブル
-df_fact = spark.read.option("header", True).option("inferSchema", True) \
-    .csv("Files/raw/fact_[xxx].csv")
-df_fact.write.mode("overwrite").format("delta").saveAsTable("fact_[xxx]")
-
-# ディメンション
-df_dim = spark.read.option("header", True).option("inferSchema", True) \
-    .csv("Files/raw/dim_[xxx].csv")
-df_dim.write.mode("overwrite").format("delta").saveAsTable("dim_[xxx]")
-
-# 日付ディメンション
-df_date = spark.read.option("header", True).option("inferSchema", True) \
-    .csv("Files/raw/dim_date.csv")
-df_date.write.mode("overwrite").format("delta").saveAsTable("dim_date")
-
-# --- 確認 ---
-display(spark.sql("SELECT * FROM fact_[xxx] LIMIT 5"))
-display(spark.sql("SELECT * FROM dim_[xxx] LIMIT 5"))
-```
+| Step | 操作 | 場所 |
+|---|---|---|
+| 1 | CSV → Delta テーブル変換 | Lakehouse → Files → 右クリック → Load to Tables |
+| 2 | Semantic Model 設定 | SQL Analytics Endpoint → モデル レイアウト |
+|   | - テーブル追加 | fact_ / dim_ テーブルを選択 |
+|   | - リレーションシップ設定 | ファクトの _key → ディメンションの _key |
+|   | - メジャー定義 | [必要なメジャーを列挙] |
+| 3 | Data Agent 設定 | Data Agent → データソース選択 |
 
 ---
 

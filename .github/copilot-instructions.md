@@ -1,6 +1,6 @@
 # Fabric GHCP デモテンプレート
 
-GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ環境を **GHCP 内からすべて構築** するテンプレート。
+GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ環境を構築するテンプレート。
 
 ## 基本方針
 
@@ -8,6 +8,7 @@ GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ
 - Fabric の情報は **Fabric MCP サーバー** のツールで取得する（推測しない）
 - Fabric 環境の構築は **MCP OneLake ツールで GHCP 内から直接実行** する
 - セマンティックモデルは **スタースキーマ** で設計する
+- CSV データは **変換済み（スタースキーマ形式）** で生成する（ETL 不要）
 - Microsoft ドキュメントは **MS Learn MCP サーバー** で検索する
 
 ## MCP サーバー
@@ -22,11 +23,12 @@ GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ
 | ワークロード | 用途 |
 |---|---|
 | Lakehouse | データ保存（ファクト＋ディメンション） |
-| Notebook | ETL（CSV → Delta テーブル） |
-| Semantic Model | スタースキーマの分析モデル |
+| SQL Analytics Endpoint | Delta テーブルへの SQL アクセス（Lakehouse と同時に自動作成） |
+| Semantic Model | スタースキーマの分析モデル（Direct Lake） |
 | Data Agent | 自然言語でデータに質問 |
 
 ## 使い方
 
 1. `/fabric-demo-create` を実行して 3 つの質問に答える
-2. Copilot が設計書 + サンプルデータを生成し、MCP ツールで Fabric に直接デプロイする
+2. Copilot が設計書 + 変換済みサンプルデータを生成し、MCP ツールで Fabric にデプロイする
+3. Fabric ポータルで初期設定（Load to Tables → Semantic Model 設定 → Data Agent 設定）
