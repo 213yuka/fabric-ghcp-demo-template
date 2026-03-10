@@ -9,13 +9,13 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 
 ## できること
 
-- ワークスペース新規作成
+- 新規ワークスペース作成（毎回）
 - Lakehouse 作成・変換済みサンプルデータ投入
 - CSV → Delta テーブル変換（REST API で自動）
 - Semantic Model 作成（TMDL 定義付き: テーブル・リレーションシップ・メジャー）
 - Data Agent 作成（自然言語でデータに質問）
 
-**主要な構築作業は GHCP チャット内で完結。ポータルでの設定は最小限です。**
+**主要な構築作業は GHCP チャット内で完結。ポータルでの手動設定は不要です。**
 
 ---
 
@@ -33,7 +33,17 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 **推奨拡張機能（オプション）:**
 - [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
 
-> **ターミナルツールについて:** Agent モードでのターミナル実行（`github.copilot.chat.agent.runInTerminal.enabled`）は `.vscode/settings.json` で有効化済みです。フェーズ 4 の REST API 呼び出しに必要です。
+> **ターミナルツールについて:** Agent モードでのターミナル実行（`github.copilot.chat.agent.runInTerminal.enabled`）は `.vscode/settings.json` で有効化済みです。フェーズ 0 の事前チェックとフェーズ 4 の REST API 呼び出しに必要です。
+
+**このセッションには端末実行機能がない** と表示された場合は、[.vscode/settings.json](.vscode/settings.json) に次の設定が入っていることを明示的に確認する:
+
+```json
+{
+   "github.copilot.chat.agent.runInTerminal.enabled": true
+}
+```
+
+リポジトリ既定では有効化済みだが、VS Code を **このリポジトリのルートで開いていない** 場合や、ワークスペース設定が反映されていない場合は無効扱いになることがある。
 
 ### Fabric 権限
 
@@ -72,9 +82,17 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 |---|---|---|
 | **0. 事前チェック** | Azure CLI・Fabric 容量・MCP 接続を確認 | GHCP が自動確認 |
 | **1. ヒアリング** | 業種・目的・追加データを確認 | ユーザーが回答 |
-| **2. MCP 調査** | Fabric API 仕様・アイテム定義を取得 | GHCP が自動実行 |
+| **2. MCP 調査** | Fabric API 仕様・利用可能な定義/サンプルを取得 | GHCP が自動実行 |
 | **3. 設計書 + データ生成** | スタースキーマ設計・変換済み CSV をローカルに出力 | GHCP が自動実行 |
 | **4. Fabric デプロイ** | Lakehouse・Semantic Model・Data Agent を作成・データ投入 | GHCP が MCP + REST API で自動実行 |
+
+実行中は、各フェーズの開始時に現在位置を表示します。
+
+- `現在の進捗: フェーズ 0/5 - 事前チェック`
+- `現在の進捗: フェーズ 1/5 - ヒアリング`
+- `現在の進捗: フェーズ 2/5 - MCP 調査`
+- `現在の進捗: フェーズ 3/5 - 設計書＋データ生成`
+- `現在の進捗: フェーズ 4/5 - Fabric デプロイ`
 
 ### 実行フロー
 
@@ -90,14 +108,14 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 ④ 設計書 + 変換済み CSV を生成（ローカル）
    ↓
 ⑤ MCP ツール + Fabric REST API で自動デプロイ
-   ├── ワークスペース選択 or 作成（+ 容量割り当て）
+   ├── 新規ワークスペース作成（+ 容量割り当て）
    ├── Lakehouse 作成（MCP）
    ├── CSV アップロード（MCP）
    ├── CSV → Delta 変換（REST API + LRO ポーリング）
    ├── Semantic Model 作成（REST API、定義付き）
-   └── Data Agent 作成（MCP）
+   └── Data Agent 作成（REST API、定義付き: データソース・AI インストラクション設定済み）
    ↓
-⑥ ポータルで Data Agent のデータソース + インストラクションを設定
+⑦ 動作検証（Fabric ポータルで代表質問を確認）
 ```
 
 ### 始め方
@@ -131,9 +149,8 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
    - **MCP ツール + Fabric REST API で Fabric にデプロイ**
    - Lakehouse 作成、CSV アップロード、CSV → Delta 変換、Semantic Model・Data Agent 作成まで自動実行
 
-7. Fabric ポータルで残りの設定:
-   - Semantic Model → テーブル追加 + リレーションシップ設定（TMDL 自動適用が成功した場合は不要）
-   - Data Agent → データソースとして Semantic Model を選択
+7. 動作検証:
+   - Fabric ポータルで Data Agent を開き、代表質問セットで動作を確認
 
 ### 生成されるもの
 
@@ -159,8 +176,8 @@ Fabric 環境:
 |---|---|---|
 | Lakehouse | データ保存（ファクト＋ディメンション） | MCP で自動作成 |
 | SQL Analytics Endpoint | Delta テーブルへの SQL アクセス | Lakehouse と同時に自動作成 |
-| Semantic Model | スタースキーマの分析モデル（Direct Lake） | MCP で作成 → ポータルで設定補完 |
-| Data Agent | 自然言語でデータに質問 | MCP で作成 → ポータルでデータソース選択 |
+| Semantic Model | スタースキーマの分析モデル（Direct Lake） | REST API で定義付き作成（自動） |
+| Data Agent | 自然言語でデータに質問 | REST API で定義付き作成（データソース・AIインストラクション自動設定） |
 
 ---
 
@@ -168,8 +185,8 @@ Fabric 環境:
 
 | 制約 | 詳細 |
 |---|---|
-| Semantic Model の設定 | MCP でアイテム作成後、テーブル追加・リレーションシップ・メジャーはポータルで設定（TMDL 自動適用成功時は不要） |
-| Data Agent のデータソース | MCP でアイテム作成後、ポータルで Semantic Model をデータソースとして選択 |
+| Semantic Model の設定 | REST API で定義付き（definition.pbism + model.bim）で作成。テーブル・リレーションシップ・メジャーが自動設定済み |
+| Data Agent のデータソース | REST API で定義付き（datasource.json + stage_config.json）で作成。データソース・AIインストラクションが自動設定済み |
 | Data Agent の対応範囲 | Semantic Model または Lakehouse に対する自然言語クエリのみ（現時点ではリアルタイムデータ非対応） |
 | ワークロード名・item-type | Fabric API の仕様変更に左右されるため、構築前に必ず `publicapis_list` で確認する |
 

@@ -189,20 +189,20 @@ dim_[xxx] ── fact_[xxx] ── dim_[yyy]
 
 | Step | 操作 | ツール / API |
 |---|---|---|
-| 1 | ワークスペース選択 or 作成 | MCP `onelake_workspace_list` + REST API |
+| 1 | 新規ワークスペース作成 | Fabric REST API |
 | 2 | Lakehouse 作成 | MCP `onelake_item_create` |
 | 3 | CSV アップロード | MCP `onelake_upload_file` |
 | 4 | CSV → Delta 変換 | ターミナルから Fabric REST API `Tables_LoadTable` |
-| 5 | Semantic Model 作成 | MCP `onelake_item_create` |
-| 6 | Data Agent 作成 | MCP `onelake_item_create` |
+| 5 | Semantic Model 作成 | Fabric REST API（定義付き: definition.pbism + model.bim） |
+| 6 | Data Agent 作成 | Fabric REST API（定義付き: データソース・AI インストラクション・代表質問） |
 
-### Fabric ポータルで設定補完
+### 全アイテムの作成・設定が GHCP 内で完結
+
+ポータルでの手動設定は不要です。動作検証のみ Fabric ポータルで行ってください。
 
 | Step | 操作 |
 |---|---|
-| 1 | Semantic Model → モデル レイアウトでテーブル追加 + リレーションシップ設定（TMDL 自動適用成功時は不要） |
-| 2 | Data Agent → データソースとして Semantic Model を選択 |
-| 3 | 代表質問セットで動作検証 |
+| 1 | Fabric ポータルで Data Agent を開き、代表質問セットで動作検証 |
 
 ---
 
@@ -211,7 +211,8 @@ dim_[xxx] ── fact_[xxx] ── dim_[yyy]
 ### 調査に使った MCP ツール
 
 - [publicapis_list / publicapis_get で取得した情報のサマリー]
-- [bestpractices_itemdefinition_get で取得したスキーマ情報]
+- [publicapis_bestpractices_examples_get で取得したリクエスト例の要点]
+- [publicapis_bestpractices_itemdefinition_get を使えた場合のみ、そのスキーマ情報]
 
 ### 参照した公式ドキュメント
 

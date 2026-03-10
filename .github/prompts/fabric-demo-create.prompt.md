@@ -14,12 +14,25 @@ tools:
 ユーザーからヒアリング → MCP で調査 → 設計書＋変換済みデータ生成 → **MCP ツールで Fabric 環境を直接構築** まで実行してください。
 
 > **重要**: CSV データは **変換済み（スタースキーマ形式）** で生成する。ETL 処理は不要。
+> **進捗表示**: 各フェーズの開始時に、必ず `現在の進捗: フェーズ X/5 - [フェーズ名]` の形式で、全 5 フェーズのうち今どこにいるかをユーザーに明示すること。
 
 ---
 
 ## フェーズ 0: 事前チェック（必須）
 
+開始時の表示例: `現在の進捗: フェーズ 0/5 - 事前チェック`
+
 フェーズ 1 のヒアリングの **前に**、以下を確認する。問題があればユーザーに対処を促す。
+
+> **重要**: 「このセッションには端末実行機能がないため、以下は未確認です」と表示された場合は、まず [.vscode/settings.json](../../.vscode/settings.json) の `github.copilot.chat.agent.runInTerminal.enabled` が `true` であることをユーザーに明示する。必要なら次の JSON をそのまま案内する:
+>
+> ```json
+> {
+>   "github.copilot.chat.agent.runInTerminal.enabled": true
+> }
+> ```
+>
+> そのうえで、**このリポジトリのルートを VS Code で開いているか** も確認する。ワークスペースルートがずれると設定が反映されない。
 
 ### 1. Azure CLI ログイン状態
 ターミナルで以下を実行:
@@ -55,6 +68,8 @@ $dataDir = Join-Path $outputDir "data"
 
 ## フェーズ 1: ヒアリング
 
+開始時の表示例: `現在の進捗: フェーズ 1/5 - ヒアリング`
+
 以下を **1回のメッセージで** 聞いてください:
 
 ```
@@ -85,19 +100,25 @@ $dataDir = Join-Path $outputDir "data"
 
 ## フェーズ 2: MCP で調査
 
+開始時の表示例: `現在の進捗: フェーズ 2/5 - MCP 調査`
+
 ユーザーの回答に基づき、以下を **必ず** 実行する:
 
 1. `publicapis_list` でワークロード一覧を確認（**必須** — item-type の最新値を取得）
 2. `publicapis_get` で関連ワークロードの API 仕様を取得
-3. `publicapis_bestpractices_itemdefinition_get` でアイテム定義を取得
-4. 必要に応じて `microsoft_docs_search` で補完
+3. `publicapis_bestpractices_examples_get` でリクエスト例を取得
+4. `publicapis_bestpractices_itemdefinition_get` は **サポートされる workload の場合のみ** 取得する（404 は失敗扱いにしない）
+5. 必要に応じて `microsoft_docs_search` で補完
 
 > **ワークロード名や item-type を固定文字列で決め打ちしない。**
 > 必ず `publicapis_list` の結果を使うこと。
+> `semanticModel` で `publicapis_bestpractices_itemdefinition_get` が 404 の場合は、`publicapis_get` の definitions と `publicapis_bestpractices_examples_get` を使って続行すること。
 
 ---
 
 ## フェーズ 3: 設計書＋変換済みデータ生成（ローカルファイル）
+
+開始時の表示例: `現在の進捗: フェーズ 3/5 - 設計書＋データ生成`
 
 調査結果をもとに、以下のファイルをローカルに生成:
 
@@ -142,6 +163,8 @@ CSV データの要件:
 
 ## フェーズ 4: Fabric 環境を構築（MCP ツール + Fabric REST API）
 
+開始時の表示例: `現在の進捗: フェーズ 4/5 - Fabric デプロイ`
+
 ローカルファイル生成後、**そのまま MCP ツール + Fabric REST API で Fabric 環境を構築** する。
 **構築順序を厳守すること**: ワークスペース → Lakehouse → CSV アップロード → Load Table → Semantic Model → Data Agent
 
@@ -151,13 +174,9 @@ CSV データの要件:
 > $token = (az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv)
 > ```
 
-### Step 1: ワークスペース選択または作成
-既存ワークスペースの利用または新規作成をユーザーに確認。
+### Step 1: 新規ワークスペースを作成
+既存ワークスペースは使わず、**毎回新規ワークスペースを作成する**。
 
-**既存ワークスペースを使う場合:**
-`onelake_workspace_list` で一覧表示し、ユーザーに選んでもらう。
-
-**新規作成する場合:**
 ```powershell
 # ワークスペース作成
 $wsResponse = Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/workspaces" `
@@ -323,69 +342,102 @@ Invoke-RestMethod `
 > これも LRO なので、202 の場合は Location ヘッダーでポーリングして完了を待つ。
 > model.bim には **全テーブル定義・全リレーションシップ・主要メジャー** を含めること。
 
-### Step 6: Data Agent 作成（インストラクション + データソース設定）
-`onelake_item_create` で DataAgent を作成。
+### Step 6: Data Agent 作成（定義付き: データソース + AI インストラクション）
+Fabric REST API で **定義付き** で Data Agent を作成する。MCP の `onelake_item_create` は使わない。
 **Semantic Model が作成済みであること。**
 
-作成後、**Fabric ポータルで以下を設定**:
-1. **データソース**: 作成した Semantic Model を追加
-2. **エージェントインストラクション**: シナリオに合わせた指示を設定
-3. **データソースインストラクション**: テーブル構造・リレーションシップ・業務用語の定義
+**Data Agent Definition の構造:**
+- `Files/Config/data_agent.json` — トップレベル設定
+- `Files/Config/draft/stage_config.json` — AI インストラクション
+- `Files/Config/draft/{dataSourceType}-{dataSourceName}/datasource.json` — データソース設定
+- `Files/Config/draft/{dataSourceType}-{dataSourceName}/fewshots.json` — 代表質問（Few-shot examples）
 
-**エージェントインストラクションのテンプレート:**
-```
+```powershell
+# Data Agent Definition JSONs
+$dataAgentConfig = '{"$schema": "2.1.0"}'
+
+$stageConfig = @{
+  '$schema' = "1.0.0"
+  aiInstructions = @"
 あなたは[業種]の[シナリオ]データアナリストです。
 以下のルールに従って回答してください:
-
-## 回答ルール
 - 数値は千円単位やパーセンテージで見やすく表示
 - 日本語で回答
 - 日付は日本の会計年度（4月〜3月）で集計
+"@
+} | ConvertTo-Json
 
-## 業務用語
-- [用語1]: [定義]
-- [用語2]: [定義]
-```
-
-**データソースインストラクションのテンプレート:**
-```md
+$datasource = @{
+  '$schema' = "1.0.0"
+  artifactId = "$lakehouseId"
+  workspaceId = "$workspaceId"
+  displayName = "[Lakehouse名]"
+  type = "lakehouse-tables"
+  userDescription = "[データソースの説明]"
+  dataSourceInstructions = @"
 ## テーブル構造
-- fact_sales: 売上トランザクション（日次）。各行は1つの販売明細。
-- dim_store: 店舗マスタ。region列で地域別分析が可能。
-- dim_product: 商品マスタ。category列でカテゴリ別分析が可能。
-- dim_date: 日付ディメンション。month_name, quarter_name は日本語。
+- fact_sales: 売上トランザクション（日次）
+- dim_store: 店舗マスタ
+- dim_product: 商品マスタ
+- dim_date: 日付ディメンション
 
 ## リレーションシップ
 - fact_sales.store_key → dim_store.store_key
 - fact_sales.product_key → dim_product.product_key
 - fact_sales.date_key → dim_date.date_key
+"@
+} | ConvertTo-Json
 
-## よくある質問のクエリロジック
-- 「売上」= fact_sales.net_sales の合計
-- 「前月比」= 当月の net_sales / 前月の net_sales
+$fewshots = @{
+  '$schema' = "1.0.0"
+  fewShots = @(
+    @{ id = [guid]::NewGuid().ToString(); question = "[代表質問1]"; query = "SELECT ..." },
+    @{ id = [guid]::NewGuid().ToString(); question = "[代表質問2]"; query = "SELECT ..." }
+  )
+} | ConvertTo-Json -Depth 3
+
+# Data Agent 名とデータソースパスの設定
+$dataSourceType = "lakehouse"
+$dataSourceName = "[Lakehouse名]"
+
+$body = @{
+  displayName = "[名前]_agent"
+  description = "[シナリオ]のデータ分析エージェント"
+  definition = @{
+    parts = @(
+      @{ path = "Files/Config/data_agent.json"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($dataAgentConfig)); payloadType = "InlineBase64" },
+      @{ path = "Files/Config/draft/stage_config.json"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($stageConfig)); payloadType = "InlineBase64" },
+      @{ path = "Files/Config/draft/$dataSourceType-$dataSourceName/datasource.json"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($datasource)); payloadType = "InlineBase64" },
+      @{ path = "Files/Config/draft/$dataSourceType-$dataSourceName/fewshots.json"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($fewshots)); payloadType = "InlineBase64" }
+    )
+  }
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod `
+  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/DataAgents" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" } `
+  -ContentType "application/json" -Body $body
 ```
+
+> これも LRO なので、202 の場合は Location ヘッダーでポーリングして完了を待つ。
+> データソース type は Lakehouse なら `lakehouse-tables`、Semantic Model なら `semantic_model` を指定。
+> 参考: [Data Agent definition](https://learn.microsoft.com/rest/api/fabric/articles/item-management/definitions/data-agent-definition)
 
 ### Step 7: 完了報告
-作成したリソースの一覧と、ポータルでの残り設定手順を報告:
+作成したリソースの一覧を報告。全アイテムの作成・設定が GHCP 内で完了:
 
 ```
-✅ デモ環境の構築が完了しました:
+✅ デモ環境の構築が完了しました（全自動）:
 - ワークスペース: [name]
 - Lakehouse: [名前]_lakehouse
 - Delta テーブル: fact_xxx, dim_xxx, dim_date（変換済み）
-- Semantic Model: [名前]_model（TMDL でリレーションシップ定義済み）
-- Data Agent: [名前]_agent
+- Semantic Model: [名前]_model（定義付き: テーブル・リレーションシップ・メジャー設定済み）
+- Data Agent: [名前]_agent（定義付き: データソース・AI インストラクション・代表質問設定済み）
 
-📋 Fabric ポータルでの設定:
-1. Semantic Model の確認
-   - TMDL 適用成功: リレーションシップ・メジャーが設定済み。確認のみ。
-   - TMDL 適用失敗: モデルレイアウトでテーブル追加 + リレーションシップ手動設定
-2. Data Agent → データソースとして Semantic Model を追加
-3. Data Agent → エージェントインストラクションを設定（以下を貼り付け）:
-   [生成したインストラクションをここに表示]
-4. Data Agent → データソースインストラクションを設定（以下を貼り付け）:
-   [生成したデータソースインストラクションをここに表示]
-5. 代表質問セットで動作検証
+📋 ポータルでの手動設定は不要です。
+
+🔍 動作検証:
+Fabric ポータルで Data Agent を開き、以下の代表質問で動作を確認してください:
 
 💡 代表質問セット:
 - [質問 1]
@@ -433,6 +485,7 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 - **CSV → Delta 変換**: Fabric REST API `Tables_LoadTable` → LRO ポーリングで完了確認
 - **Semantic Model**: REST API で **定義付き**（definition.pbism + model.bim）で作成する。MCP の `onelake_item_create` は使わない
 - **definition.pbism**: 最小構成（`version` + `$schema` のみ）を使う。`datasetReference` 等を入れるとエラー
+- **Data Agent**: REST API `POST /v1/workspaces/{id}/DataAgents` で **定義付き** で作成する（データソース・AI インストラクション・代表質問を含む）。MCP の `onelake_item_create` は使わない
 - **LRO 監視**: 202 Accepted が返ったら必ず Location ヘッダーでポーリングして完了を待つ
 - **`onelake_upload_file`**: `local-file-path` は **絶対パス** で指定する
 - **代表質問セット** を必ず設計書に含める
