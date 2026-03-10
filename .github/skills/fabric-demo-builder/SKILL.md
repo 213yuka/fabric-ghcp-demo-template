@@ -227,21 +227,39 @@ Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspac
 - `overwrite`: true
 
 ### Step 4: CSV → Delta テーブル変換
-MCP ツールには Load Table API がないため、**Fabric REST API をターミナルから直接呼び出す**。
-```powershell
-$body = @{
-  relativePath = "Files/[tableName].csv"
-  pathType = "File"
-  mode = "Overwrite"
-  formatOptions = @{ format = "Csv"; header = $true; delimiter = "," }
-} | ConvertTo-Json -Depth 3
+MCP ツールには Load Table API がないため、**Fabric REST API を PowerShell でターミナルから直接呼び出す**。
+> **重要**: Python ではなく **PowerShell** を使うこと（`Invoke-WebRequest` + LRO ポーリング）。
 
-Invoke-RestMethod `
-  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/lakehouses/$lakehouseId/tables/$tableName/load" `
-  -Method POST -Headers @{ Authorization = "Bearer $token" } `
-  -ContentType "application/json" -Body $body
+```powershell
+$tables = @("dim_date", "dim_store", "dim_product", "fact_sales")  # 生成した CSV に合わせる
+
+foreach ($tableName in $tables) {
+    Write-Host "`n===== Loading table: $tableName ====="
+    $body = @{
+        relativePath  = "Files/$tableName.csv"
+        pathType      = "File"
+        mode          = "Overwrite"
+        formatOptions = @{ format = "Csv"; header = $true; delimiter = "," }
+    } | ConvertTo-Json -Depth 3
+
+    $response = Invoke-WebRequest `
+        -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/lakehouses/$lakehouseId/tables/$tableName/load" `
+        -Method POST -Headers @{ Authorization = "Bearer $token" } `
+        -ContentType "application/json" -Body $body
+
+    if ($response.StatusCode -eq 202) {
+        $operationUrl = $response.Headers["Location"]
+        if ($operationUrl -is [array]) { $operationUrl = $operationUrl[0] }
+        do {
+            Start-Sleep -Seconds 5
+            $status = Invoke-RestMethod -Uri $operationUrl -Headers @{ Authorization = "Bearer $token" }
+            Write-Host "  Status: $($status.status)"
+        } while ($status.status -notin @("Succeeded", "Failed"))
+    }
+    Write-Host "  ✅ $tableName done"
+}
 ```
-これは LRO（非同期）。202 が返ったらステータスを確認して完了を待つ。全 CSV に対して順番に実行する。
+全 CSV に対して 1 つずつ順番に実行し、LRO ポーリングで完了を待ってから次へ進む。
 
 ### Step 5: Semantic Model 作成
 Fabric REST API で **定義付き**（definition.pbism + model.bim）で作成する。MCP の `onelake_item_create` は使わない。

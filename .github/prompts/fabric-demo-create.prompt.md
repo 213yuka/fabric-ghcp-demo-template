@@ -220,48 +220,54 @@ $lakehouseId = $lhResponse.id
 - `overwrite`: true
 
 ### Step 4: CSV → Delta テーブル変換
-MCP ツールには Load Table API がないため、**Fabric REST API をターミナルから直接呼び出す**。
-各 CSV に対して、ターミナルで以下を実行:
+MCP ツールには Load Table API がないため、**Fabric REST API を PowerShell でターミナルから直接呼び出す**。
+> **重要**: Python ではなく **PowerShell** を使うこと。以下のスクリプトをそのまま使用する。
+
 ```powershell
-$workspaceId = "[workspace-id]"
-$lakehouseId = "[lakehouse-id]"
-$tableName = "fact_sales"  # CSV ファイル名（拡張子除く）
-$body = @{
-  relativePath = "Files/$tableName.csv"
-  pathType = "File"
-  mode = "Overwrite"
-  formatOptions = @{
-    format = "Csv"
-    header = $true
-    delimiter = ","
-  }
-} | ConvertTo-Json -Depth 3
+# Step 4: 全 CSV を Delta テーブルに変換（LRO ポーリング込み）
+$tables = @("dim_date", "dim_store", "dim_product", "fact_sales")  # 生成した CSV に合わせて変更
 
-Invoke-RestMethod `
-  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/lakehouses/$lakehouseId/tables/$tableName/load" `
-  -Method POST -Headers @{ Authorization = "Bearer $token" } `
-  -ContentType "application/json" -Body $body
-```
-これは LRO（非同期）なので、202 が返ったらステータスを確認して完了を待つ。
+foreach ($tableName in $tables) {
+    Write-Host "`n===== Loading table: $tableName ====="
+    $body = @{
+        relativePath  = "Files/$tableName.csv"
+        pathType      = "File"
+        mode          = "Overwrite"
+        formatOptions = @{ format = "Csv"; header = $true; delimiter = "," }
+    } | ConvertTo-Json -Depth 3
 
-**LRO ポーリング手順:**
-```powershell
-# Load Table は 202 Accepted を返す。Location ヘッダーでステータスを追跡
-$response = Invoke-WebRequest `
-  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/lakehouses/$lakehouseId/tables/$tableName/load" `
-  -Method POST -Headers @{ Authorization = "Bearer $token" } `
-  -ContentType "application/json" -Body $body
+    $response = Invoke-WebRequest `
+        -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/lakehouses/$lakehouseId/tables/$tableName/load" `
+        -Method POST -Headers @{ Authorization = "Bearer $token" } `
+        -ContentType "application/json" -Body $body
 
-if ($response.StatusCode -eq 202) {
-  $operationUrl = $response.Headers["Location"]
-  do {
-    Start-Sleep -Seconds 5
-    $status = Invoke-RestMethod -Uri $operationUrl -Headers @{ Authorization = "Bearer $token" }
-    Write-Host "Status: $($status.status)"
-  } while ($status.status -notin @("Succeeded", "Failed"))
+    if ($response.StatusCode -eq 202) {
+        $operationUrl = $response.Headers["Location"]
+        if ($operationUrl -is [array]) { $operationUrl = $operationUrl[0] }
+        Write-Host "  LRO started: polling..."
+        do {
+            Start-Sleep -Seconds 5
+            $status = Invoke-RestMethod -Uri $operationUrl -Headers @{ Authorization = "Bearer $token" }
+            Write-Host "  Status: $($status.status)"
+        } while ($status.status -notin @("Succeeded", "Failed"))
+
+        if ($status.status -eq "Failed") {
+            Write-Host "  ❌ FAILED: $($status | ConvertTo-Json -Depth 3)"
+        } else {
+            Write-Host "  ✅ $tableName done"
+        }
+    } else {
+        Write-Host "  ✅ $tableName done (immediate)"
+    }
 }
+Write-Host "`n===== All tables loaded! ====="
 ```
-全 CSV に対して **1つずつ順番に** 実行し、各テーブルの変換完了を待ってから次へ進む。
+
+> **注意事項:**
+> - `$tables` 配列は生成した CSV ファイル名（拡張子除く）に合わせて変更する
+> - `$workspaceId`, `$lakehouseId`, `$token` は前のステップで取得済みの変数を使う
+> - 各テーブルの変換完了を待ってから次へ進む（LRO ポーリングで自動待機）
+> - `Invoke-WebRequest` を使って Location ヘッダーを取得する（`Invoke-RestMethod` は Location を返さない）
 
 ### Step 5: Semantic Model 作成（定義付き + リレーションシップ）
 Semantic Model は **空では作成できない**。`definition.pbism` と `model.bim`（最低限）が必須。
@@ -486,6 +492,7 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 - フェーズ 1 の回答が揃うまで先に進まない
 - 回答後は **フェーズ 2〜4 を一気に実行** する
 - Fabric 環境の構築は **MCP + Fabric REST API で GHCP 内から直接実行** する
+- **REST API 呼び出しは PowerShell（`Invoke-WebRequest` / `Invoke-RestMethod`）を使う** — Python は使わない
 - CSV は **変換済み**（スタースキーマ形式）で生成 — ETL / Notebook は不要
 - **ファイル保存は絶対パスで行う** — ターミナルの cd に依存しない
 - **構築順序**: ワークスペース（+容量割り当て） → Lakehouse → CSV アップロード → Load Table → Semantic Model（定義付き） → Data Agent
