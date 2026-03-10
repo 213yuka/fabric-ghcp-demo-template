@@ -78,7 +78,7 @@ tools:
 - アーキテクチャ図
 - スタースキーマ設計（ER 図 + テーブル定義）
 - サンプルデータ抜粋
-- 構築手順（MCP + ポータル）
+- 構築手順（MCP + Fabric REST API で完結）
 - **代表質問セット**（5〜10 個）
 - Data Agent 設計（データソース、スコープ、インストラクション案）
 
@@ -97,8 +97,8 @@ CSV データの要件:
 
 ## フェーズ 4: Fabric 環境を構築（MCP ツールで実行）
 
-ローカルファイル生成後、**そのまま MCP ツールで Fabric 環境を構築** する。
-**構築順序を厳守すること**: Lakehouse → CSV → Semantic Model → Data Agent
+ローカルファイル生成後、**そのまま MCP ツール + Fabric REST API で Fabric 環境を構築** する。
+**構築順序を厳守すること**: Lakehouse → CSV アップロード → Load Table → Semantic Model (TMDL) → Data Agent
 
 ### Step 1: ワークスペース作成
 `onelake_workspace_list` で既存ワークスペースを確認した上で、デモ用の **新しいワークスペースを作成** する。
@@ -111,29 +111,52 @@ CSV データの要件:
 ### Step 3: サンプルデータをアップロード
 `onelake_upload_file` で `demo-output/data/` の CSV を Lakehouse の `Files/` にアップロード。
 
-### Step 4: Semantic Model 作成
-`onelake_item_create` で SemanticModel を作成。
+### Step 4: CSV → Delta テーブル変換
+Lakehouse REST API の `Tables_LoadTable` を使って、各 CSV を Delta テーブルに変換する（ポータル不要）。
+API: `POST /v1/workspaces/{workspaceId}/lakehouses/{lakehouseId}/tables/{tableName}/load`
+各 CSV に対して以下を実行:
+```json
+{
+  "relativePath": "Files/fact_xxx.csv",
+  "pathType": "File",
+  "mode": "Overwrite",
+  "formatOptions": {
+    "format": "Csv",
+    "header": true,
+    "delimiter": ","
+  }
+}
+```
+テーブル名は CSV ファイル名（拡張子除く）と同じにする。
 
-### Step 5: Data Agent 作成
+### Step 5: Semantic Model 作成（TMDL 定義付き）
+`onelake_item_create` で SemanticModel を **TMDL 定義付き** で作成。
+定義には以下を含める:
+- `definition/model.tmdl` — Direct Lake モード、Lakehouse への接続
+- `definition/tables/*.tmdl` — 各テーブル定義（カラム、データ型、メジャー）
+- `definition/relationships.tmdl` — スタースキーマのリレーションシップ
+- `definition.pbism` + `definition/database.tmdl`
+
+TMDL 定義は base64 エンコードして `definition.parts[]` に格納する。
+
+### Step 6: Data Agent 作成
 `onelake_item_create` で DataAgent を作成。
 **Semantic Model が作成済みであること。**
 
-### Step 6: 完了報告 + ポータル設定ガイド
-作成したリソースの一覧と、ポータルで必要な設定を案内:
+### Step 7: 完了報告
+作成したリソースの一覧と、残りの手動ステップを案内:
 
 ```
 ✅ GHCP での構築完了:
+- ワークスペース: demo-[xxx]-[YYYYMMDD]
 - Lakehouse: [名前]_lakehouse
-- Semantic Model: [名前]_model
+- Delta テーブル: fact_xxx, dim_xxx, dim_date（変換済み）
+- Semantic Model: [名前]_model（TMDL でテーブル・リレーションシップ・メジャー設定済み）
 - Data Agent: [名前]_agent
-- アップロード済み CSV: fact_xxx.csv, dim_xxx.csv, dim_date.csv
 
-📋 Fabric ポータルで以下の設定を行ってください:
-
-1. Lakehouse を開く → Files/ 内の各 CSV を右クリック → 「Load to Tables」
-2. SQL Analytics Endpoint → モデル レイアウト → テーブル追加 + リレーションシップ設定
-3. Data Agent → データソースとして Semantic Model を選択
-4. Data Agent で代表質問セットを使って動作検証
+📋 Fabric ポータルでの残りステップ（Data Agent のみ）:
+1. Data Agent → データソースとして Semantic Model を選択
+2. 代表質問セットで動作検証
 
 💡 代表質問セット:
 - [質問 1]
@@ -161,5 +184,7 @@ CSV データの要件:
 - 回答後は **フェーズ 2〜4 を一気に実行** する
 - Fabric 環境の構築は **MCP OneLake ツールで GHCP 内から直接実行** する
 - CSV は **変換済み**（スタースキーマ形式）で生成 — ETL / Notebook は不要
-- **構築順序**: Lakehouse → CSV アップロード → Semantic Model → Data Agent
+- **構築順序**: Lakehouse → CSV アップロード → Load Table → Semantic Model (TMDL) → Data Agent
+- **CSV → Delta 変換**: Lakehouse REST API `Tables_LoadTable` で自動実行（ポータル不要）
+- **Semantic Model**: TMDL 定義付きで作成（テーブル・リレーションシップ・メジャー含む）
 - **代表質問セット** を必ず設計書に含める
