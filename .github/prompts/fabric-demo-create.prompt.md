@@ -17,6 +17,42 @@ tools:
 
 ---
 
+## フェーズ 0: 事前チェック（必須）
+
+フェーズ 1 のヒアリングの **前に**、以下を確認する。問題があればユーザーに対処を促す。
+
+### 1. Azure CLI ログイン状態
+ターミナルで以下を実行:
+```powershell
+az account show --query "{name:name, id:id}" -o table
+```
+ログインしていなければ `az login` を案内。
+
+### 2. Fabric 容量の確認
+ターミナルで以下を実行し、アクティブな容量があるか確認:
+```powershell
+$token = (az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv)
+Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/capacities" `
+  -Headers @{ Authorization = "Bearer $token" } | ConvertTo-Json -Depth 3
+```
+容量がない・一時停止中の場合は、ユーザーに Azure ポータルでの起動を促す。
+
+### 3. MCP サーバー接続
+`publicapis_list` を実行して fabric-mcp-server が応答することを確認。
+応答がない場合は、MCP サーバーの再起動を案内する。
+
+### 4. ワークスペースのパス確認
+現在のワークスペースルートを取得し、ファイル生成時の **絶対パス** の基準にする:
+```powershell
+$workspaceRoot = (Get-Location).Path
+$outputDir = Join-Path $workspaceRoot "demo-output"
+$dataDir = Join-Path $outputDir "data"
+```
+
+> **事前チェックが全て通過したら**、フェーズ 1 に進む。
+
+---
+
 ## フェーズ 1: ヒアリング
 
 以下を **1回のメッセージで** 聞いてください:
@@ -65,6 +101,9 @@ tools:
 
 調査結果をもとに、以下のファイルをローカルに生成:
 
+> **重要: ファイルは必ず絶対パスで保存する。**
+> ターミナルの cd に依存せず、`$outputDir` / `$dataDir` （フェーズ 0 で取得）を使用すること。
+
 ### `demo-output/demo-spec.md`
 [デモ設計書テンプレート](../skills/fabric-demo-builder/examples/demo-spec-template.md) に従って生成。
 
@@ -102,14 +141,28 @@ CSV データの要件:
 > ```
 
 ### Step 1: ワークスペース選択または作成
-`onelake_workspace_list` で既存ワークスペースを一覧表示し、ユーザーに使用するワークスペースを選んでもらう。
-新規作成したい場合は、Fabric REST API をターミナルから呼び出す:
+既存ワークスペースの利用または新規作成をユーザーに確認。
+
+**既存ワークスペースを使う場合:**
+`onelake_workspace_list` で一覧表示し、ユーザーに選んでもらう。
+
+**新規作成する場合:**
 ```powershell
-Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/workspaces" `
+# ワークスペース作成
+$wsResponse = Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/workspaces" `
   -Method POST -Headers @{ Authorization = "Bearer $token" } `
   -ContentType "application/json" `
   -Body '{"displayName": "demo-[scenario]-[YYYYMMDD]"}'
+$workspaceId = $wsResponse.id
+
+# 重要: 新規ワークスペースに Fabric 容量を割り当て（これがないと Lakehouse 作成が失敗する）
+$capacityId = "[事前チェックで確認した容量ID]"
+Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/assignToCapacity" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" } `
+  -ContentType "application/json" `
+  -Body "{`"capacityId`": `"$capacityId`"}"
 ```
+> ⚠ **容量割り当てを忘れると `FeatureNotAvailable` エラーになる。** 必ず Lakehouse 作成前に実行する。
 
 ### Step 2: Lakehouse 作成
 `onelake_item_create` で Lakehouse を作成。
@@ -118,9 +171,12 @@ Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/workspaces" `
 
 ### Step 3: サンプルデータをアップロード
 `onelake_upload_file` で `demo-output/data/` の CSV を Lakehouse の `Files/` にアップロード。
+
+> **重要**: `local-file-path` は **絶対パス** で指定する。相対パスだとターミナルの作業ディレクトリによってファイルが見つからないエラーになる。
+
 **パラメータ:**
 - `file-path`: OneLake 上のパス（例: `Files/fact_sales.csv`）
-- `local-file-path`: ローカル CSV ファイルの絶対パス（例: `demo-output/data/fact_sales.csv`）
+- `local-file-path`: ローカル CSV ファイルの **絶対パス**（例: `C:/Users/xxx/project/demo-output/data/fact_sales.csv`）
 - `item`: Lakehouse 名 + 型サフィックス（例: `myLakehouse.Lakehouse`）
 - `workspace`: ワークスペース名
 - `overwrite`: true
@@ -149,57 +205,112 @@ Invoke-RestMethod `
   -ContentType "application/json" -Body $body
 ```
 これは LRO（非同期）なので、202 が返ったらステータスを確認して完了を待つ。
-全 CSV に対して順番に実行する。
 
-### Step 5: Semantic Model 作成（TMDL 定義 + リレーションシップ）
-`onelake_item_create` で SemanticModel を作成後、**Fabric REST API `updateDefinition` で TMDL 定義を適用** する。
-
-**TMDL 定義に必ず含めるもの:**
-- `definition/model.tmdl` — Direct Lake モード、Lakehouse の SQL Analytics Endpoint への接続式
-- `definition/tables/fact_xxx.tmdl` — ファクトテーブル（カラム定義 + メジャー）
-- `definition/tables/dim_xxx.tmdl` — 各ディメンションテーブル
-- `definition/relationships.tmdl` — **スタースキーマのリレーションシップ**（ファクト → ディメンション、多対一）
-- `definition/database.tmdl` + `definition.pbism`
-
-**リレーションシップの TMDL 例:**
-```
-relationship rel_fact_sales_dim_store
-    fromColumn: fact_sales.store_key
-    toColumn: dim_store.store_key
-    crossFilteringBehavior: oneDirection
-
-relationship rel_fact_sales_dim_product
-    fromColumn: fact_sales.product_key
-    toColumn: dim_product.product_key
-    crossFilteringBehavior: oneDirection
-
-relationship rel_fact_sales_dim_date
-    fromColumn: fact_sales.date_key
-    toColumn: dim_date.date_key
-    crossFilteringBehavior: oneDirection
-```
-
-**REST API で TMDL を適用:**
+**LRO ポーリング手順:**
 ```powershell
-# 各 TMDL ファイルを base64 エンコードして parts 配列に格納
-$definition = @{
+# Load Table は 202 Accepted を返す。Location ヘッダーでステータスを追跡
+$response = Invoke-WebRequest `
+  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/lakehouses/$lakehouseId/tables/$tableName/load" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" } `
+  -ContentType "application/json" -Body $body
+
+if ($response.StatusCode -eq 202) {
+  $operationUrl = $response.Headers["Location"]
+  do {
+    Start-Sleep -Seconds 5
+    $status = Invoke-RestMethod -Uri $operationUrl -Headers @{ Authorization = "Bearer $token" }
+    Write-Host "Status: $($status.status)"
+  } while ($status.status -notin @("Succeeded", "Failed"))
+}
+```
+全 CSV に対して **1つずつ順番に** 実行し、各テーブルの変換完了を待ってから次へ進む。
+
+### Step 5: Semantic Model 作成（定義付き + リレーションシップ）
+Semantic Model は **空では作成できない**。`definition.pbism` と `model.bim`（最低限）が必須。
+**Fabric REST API の Create Item で定義付きで作成する**（MCP `onelake_item_create` は定義を渡せないため使わない）。
+
+**最小構成の definition.pbism:**
+```json
+{
+  "version": "4.0",
+  "$schema": "https://raw.githubusercontent.com/microsoft/json-schemas/main/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json"
+}
+```
+> ⚠ `datasetReference` や `connections` を入れると `Workload_FailedToParseFile` エラーになる。上記の最小構成を使うこと。
+
+**最小構成の model.bim（TMSL 形式）:**
+スタースキーマの全テーブル・カラム・リレーションシップ・メジャーを含む TMSL JSON を生成する。
+
+```json
+{
+  "compatibilityLevel": 1604,
+  "model": {
+    "defaultMode": "directLake",
+    "tables": [
+      {
+        "name": "fact_sales",
+        "columns": [
+          { "name": "sale_id", "dataType": "int64", "sourceColumn": "sale_id" },
+          { "name": "date_key", "dataType": "int64", "sourceColumn": "date_key" },
+          ...
+        ],
+        "measures": [
+          { "name": "Total Sales", "expression": "SUM(fact_sales[net_sales])" }
+        ],
+        "partitions": [
+          {
+            "name": "fact_sales",
+            "mode": "directLake",
+            "source": { "type": "entity", "entityName": "fact_sales" }
+          }
+        ]
+      },
+      ...
+    ],
+    "relationships": [
+      {
+        "name": "rel_fact_sales_dim_store",
+        "fromTable": "fact_sales", "fromColumn": "store_key",
+        "toTable": "dim_store", "toColumn": "store_key",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      ...
+    ],
+    "expressions": [
+      {
+        "name": "DatabaseQuery",
+        "kind": "m",
+        "expression": "let\\n  Source = Sql.Database(\\\"[SQL_ENDPOINT]\\\", \\\"[DATABASE_NAME]\\\")\\nin\\n  Source"
+      }
+    ]
+  }
+}
+```
+
+**REST API で定義付きで作成:**
+```powershell
+$pbism = '{"version":"4.0","$schema":"https://raw.githubusercontent.com/microsoft/json-schemas/main/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json"}'
+$modelBim = "[上記の model.bim JSON 文字列]"
+
+$body = @{
+  displayName = "[名前]_model"
+  type = "SemanticModel"
   definition = @{
     parts = @(
-      @{ path = "definition/model.tmdl"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($modelTmdl)); payloadType = "InlineBase64" },
-      @{ path = "definition/tables/fact_sales.tmdl"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($factTmdl)); payloadType = "InlineBase64" },
-      # ... 他のテーブルも同様
-      @{ path = "definition.pbism"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pbism)); payloadType = "InlineBase64" }
+      @{ path = "definition.pbism"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pbism)); payloadType = "InlineBase64" },
+      @{ path = "model.bim"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($modelBim)); payloadType = "InlineBase64" }
     )
   }
 } | ConvertTo-Json -Depth 5
 
 Invoke-RestMethod `
-  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/semanticModels/$semanticModelId/updateDefinition" `
+  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/semanticModels" `
   -Method POST -Headers @{ Authorization = "Bearer $token" } `
-  -ContentType "application/json" -Body $definition
+  -ContentType "application/json" -Body $body
 ```
 
-> TMDL 適用が失敗した場合は、完了報告でポータルでの設定手順を案内する。
+> これも LRO なので、202 の場合は Location ヘッダーでポーリングして完了を待つ。
+> model.bim には **全テーブル定義・全リレーションシップ・主要メジャー** を含めること。
 
 ### Step 6: Data Agent 作成（インストラクション + データソース設定）
 `onelake_item_create` で DataAgent を作成。
@@ -300,13 +411,17 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 ## 重要なルール
 
 - **MCP ツールで得た最新情報に基づく**（推測しない）
+- **フェーズ 0 の事前チェック** を必ず最初に実行する
 - フェーズ 1 の回答が揃うまで先に進まない
 - 回答後は **フェーズ 2〜4 を一気に実行** する
 - Fabric 環境の構築は **MCP + Fabric REST API で GHCP 内から直接実行** する
-- **Fabric ポータルを一切開かずに完結** させる
 - CSV は **変換済み**（スタースキーマ形式）で生成 — ETL / Notebook は不要
-- **構築順序**: ワークスペース → Lakehouse → CSV アップロード → Load Table → Semantic Model → Data Agent
-- **CSV → Delta 変換**: Fabric REST API `Tables_LoadTable` をターミナルから実行（MCP ツールにはない）
-- **Semantic Model**: MCP で作成後、TMDL 定義は REST API `updateDefinition` で適用を試みる
-- **`onelake_upload_file`**: `local-file-path` + `file-path` + `item`（型サフィックス付き）を指定
+- **ファイル保存は絶対パスで行う** — ターミナルの cd に依存しない
+- **構築順序**: ワークスペース（+容量割り当て） → Lakehouse → CSV アップロード → Load Table → Semantic Model（定義付き） → Data Agent
+- **新規ワークスペースには必ず Fabric 容量を割り当てる**（`assignToCapacity`）
+- **CSV → Delta 変換**: Fabric REST API `Tables_LoadTable` → LRO ポーリングで完了確認
+- **Semantic Model**: REST API で **定義付き**（definition.pbism + model.bim）で作成する。MCP の `onelake_item_create` は使わない
+- **definition.pbism**: 最小構成（`version` + `$schema` のみ）を使う。`datasetReference` 等を入れるとエラー
+- **LRO 監視**: 202 Accepted が返ったら必ず Location ヘッダーでポーリングして完了を待つ
+- **`onelake_upload_file`**: `local-file-path` は **絶対パス** で指定する
 - **代表質問セット** を必ず設計書に含める

@@ -66,10 +66,11 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 
 ### フェーズ概要
 
-`/fabric-demo-create` は **4 フェーズ** でデモ環境を構築します:
+`/fabric-demo-create` は **5 フェーズ** でデモ環境を構築します:
 
 | フェーズ | 内容 | 実行者 |
 |---|---|---|
+| **0. 事前チェック** | Azure CLI・Fabric 容量・MCP 接続を確認 | GHCP が自動確認 |
 | **1. ヒアリング** | 業種・目的・追加データを確認 | ユーザーが回答 |
 | **2. MCP 調査** | Fabric API 仕様・アイテム定義を取得 | GHCP が自動実行 |
 | **3. 設計書 + データ生成** | スタースキーマ設計・変換済み CSV をローカルに出力 | GHCP が自動実行 |
@@ -80,26 +81,31 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 ```
 /fabric-demo-create
    ↓
-① ヒアリング — 業種・目的 + 追加データ（任意）
+① 事前チェック — Azure CLI・Fabric 容量・MCP 接続
    ↓
-② MCP で Fabric API 仕様を調査
+② ヒアリング — 業種・目的 + 追加データ（任意）
    ↓
-③ 設計書 + 変換済み CSV を生成（ローカル）
+③ MCP で Fabric API 仕様を調査
    ↓
-④ MCP ツール + Fabric REST API で自動デプロイ
-   ├── ワークスペース選択または作成
+④ 設計書 + 変換済み CSV を生成（ローカル）
+   ↓
+⑤ MCP ツール + Fabric REST API で自動デプロイ
+   ├── ワークスペース選択 or 作成（+ 容量割り当て）
    ├── Lakehouse 作成（MCP）
    ├── CSV アップロード（MCP）
-   ├── CSV → Delta 変換（REST API）
-   ├── Semantic Model 作成（MCP）
+   ├── CSV → Delta 変換（REST API + LRO ポーリング）
+   ├── Semantic Model 作成（REST API、定義付き）
    └── Data Agent 作成（MCP）
    ↓
-⑤ ポータルで Semantic Model + Data Agent の設定を補完
+⑥ ポータルで Data Agent のデータソース + インストラクションを設定
 ```
 
 ### 始め方
 
-1. このリポジトリをクローンして VS Code で開く
+> ❗ **重要**: このリポジトリを **VS Code のワークスペースルート** として開いてください。
+> サブフォルダとして開くと、`.github/prompts` や `.vscode/settings.json` が認識されず `/fabric-demo-create` が使えません。
+
+1. このリポジトリをクローンして VS Code で **リポジトリルートを直接** 開く
 2. MCP サーバーの接続を確認（上記「セットアップ確認」参照）
 3. GitHub Copilot Chat を **Agent モード** で開く
 4. 以下を入力:
