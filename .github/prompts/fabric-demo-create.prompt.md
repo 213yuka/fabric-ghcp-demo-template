@@ -100,8 +100,9 @@ CSV データの要件:
 ローカルファイル生成後、**そのまま MCP ツールで Fabric 環境を構築** する。
 **構築順序を厳守すること**: Lakehouse → CSV → Semantic Model → Data Agent
 
-### Step 1: ワークスペース確認
-`onelake_workspace_list` でワークスペースを一覧表示し、ユーザーにデプロイ先を選んでもらう。
+### Step 1: ワークスペース作成
+`onelake_workspace_list` で既存ワークスペースを確認した上で、デモ用の **新しいワークスペースを作成** する。
+ワークスペース名は `demo-[シナリオ]-[YYYYMMDD]`（例: `demo-retail-sales-20260310`）とする。
 
 ### Step 2: Lakehouse 作成
 `onelake_item_create` で Lakehouse を作成。
