@@ -263,9 +263,14 @@ foreach ($tableName in $tables) {
 
 ### Step 5: Semantic Model 作成
 Fabric REST API で **定義付き**（definition.pbism + model.bim）で作成する。MCP の `onelake_item_create` は使わない。
+**Python ではなく PowerShell を使う。** model.bim は **TMSL 形式**（JSON）を使う（TMDL ではない）。
 
-> **注意**: MCP の `onelake_item_create` には `definition` パラメータがない。
-> Semantic Model は空では作成できないため、REST API で定義付きで作成する。
+> **注意**:
+> - MCP の `onelake_item_create` には `definition` パラメータがない。REST API で定義付きで作成する。
+> - model.bim は **PowerShell ハッシュテーブル** で構築し、`ConvertTo-Json -Depth 10` で JSON に変換する。
+> - `definition.pbism` は最小構成（`version` + `$schema` のみ）。`datasetReference` 等を入れるとエラー。
+> - ファクト・ディメンション全テーブル、リレーションシップ、メジャー、DatabaseQuery 式を含める。
+> - `Invoke-WebRequest` で呼び出し、202 の場合は Location ヘッダーで LRO ポーリング。
 
 ### Step 6: Data Agent 作成（定義付き: データソース + AI インストラクション）
 Fabric REST API で **定義付き** で Data Agent を作成する。

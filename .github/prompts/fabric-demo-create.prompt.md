@@ -270,91 +270,145 @@ Write-Host "`n===== All tables loaded! ====="
 > - `Invoke-WebRequest` を使って Location ヘッダーを取得する（`Invoke-RestMethod` は Location を返さない）
 
 ### Step 5: Semantic Model 作成（定義付き + リレーションシップ）
-Semantic Model は **空では作成できない**。`definition.pbism` と `model.bim`（最低限）が必須。
-**Fabric REST API の Create Item で定義付きで作成する**（MCP `onelake_item_create` は定義を渡せないため使わない）。
+Semantic Model は **空では作成できない**。`definition.pbism` と `model.bim`（TMSL 形式）が必須。
+**Fabric REST API で定義付きで作成する**（MCP は使わない）。**Python ではなく PowerShell を使う。**
 
-**最小構成の definition.pbism:**
-```json
-{
-  "version": "4.0",
-  "$schema": "https://raw.githubusercontent.com/microsoft/json-schemas/main/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json"
-}
-```
-> ⚠ `datasetReference` や `connections` を入れると `Workload_FailedToParseFile` エラーになる。上記の最小構成を使うこと。
+> ⚠ TMDL 形式ではなく **TMSL 形式（model.bim = 単一 JSON ファイル）** を使うこと。
+> ⚠ `definition.pbism` は最小構成（`version` + `$schema` のみ）。`datasetReference` 等を入れると `Workload_FailedToParseFile` エラーになる。
 
-**最小構成の model.bim（TMSL 形式）:**
-スタースキーマの全テーブル・カラム・リレーションシップ・メジャーを含む TMSL JSON を生成する。
+**以下の完全な PowerShell スクリプトのパターンに従って生成・実行する（Python は使わない）:**
 
-```json
-{
-  "compatibilityLevel": 1604,
-  "model": {
-    "defaultMode": "directLake",
-    "tables": [
-      {
-        "name": "fact_sales",
-        "columns": [
-          { "name": "sale_id", "dataType": "int64", "sourceColumn": "sale_id" },
-          { "name": "date_key", "dataType": "int64", "sourceColumn": "date_key" },
-          ...
-        ],
-        "measures": [
-          { "name": "Total Sales", "expression": "SUM(fact_sales[net_sales])" }
-        ],
-        "partitions": [
-          {
-            "name": "fact_sales",
-            "mode": "directLake",
-            "source": { "type": "entity", "entityName": "fact_sales" }
-          }
-        ]
-      },
-      ...
-    ],
-    "relationships": [
-      {
-        "name": "rel_fact_sales_dim_store",
-        "fromTable": "fact_sales", "fromColumn": "store_key",
-        "toTable": "dim_store", "toColumn": "store_key",
-        "crossFilteringBehavior": "oneDirection"
-      },
-      ...
-    ],
-    "expressions": [
-      {
-        "name": "DatabaseQuery",
-        "kind": "m",
-        "expression": "let\\n  Source = Sql.Database(\\\"[SQL_ENDPOINT]\\\", \\\"[DATABASE_NAME]\\\")\\nin\\n  Source"
-      }
-    ]
-  }
-}
-```
-
-**REST API で定義付きで作成:**
 ```powershell
-$pbism = '{"version":"4.0","$schema":"https://raw.githubusercontent.com/microsoft/json-schemas/main/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json"}'
-$modelBim = "[上記の model.bim JSON 文字列]"
+$token = (az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv)
 
+# --- definition.pbism（最小構成 — このまま使う。変更しない） ---
+$pbism = '{"version":"4.0","$schema":"https://raw.githubusercontent.com/microsoft/json-schemas/main/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json"}'
+
+# --- model.bim（TMSL 形式）— PowerShell ハッシュテーブルで構築 ---
+# ⚠ ConvertTo-Json -Depth 10 を必ず指定（浅いと入れ子が切り捨てられてエラーになる）
+$sqlEndpointFqdn = "[SQL Analytics Endpoint の FQDN]"
+$databaseName = "[Lakehouse 名]"
+
+$modelBimObj = @{
+    compatibilityLevel = 1604
+    model = @{
+        defaultMode = "directLake"
+        tables = @(
+            # ===== ファクトテーブル例 =====
+            @{
+                name = "fact_sales"
+                columns = @(
+                    @{ name = "sale_id"; dataType = "int64"; sourceColumn = "sale_id"; summarizeBy = "none" }
+                    @{ name = "quantity"; dataType = "int64"; sourceColumn = "quantity"; summarizeBy = "sum" }
+                    # ... 全カラムを列挙
+                )
+                measures = @(
+                    @{ name = "Total Sales"; expression = "SUM(fact_sales[net_sales])"; formatString = "#,##0" }
+                    # ... 全メジャーを列挙
+                )
+                partitions = @(
+                    @{
+                        name = "fact_sales"
+                        mode = "directLake"
+                        source = @{ type = "entity"; entityName = "fact_sales" }
+                    }
+                )
+            }
+            # ===== ディメンションテーブル例 =====
+            @{
+                name = "dim_store"
+                columns = @(
+                    @{ name = "store_key"; dataType = "int64"; sourceColumn = "store_key"; summarizeBy = "none" }
+                    @{ name = "store_name"; dataType = "string"; sourceColumn = "store_name" }
+                    # ... 全カラムを列挙
+                )
+                partitions = @(
+                    @{
+                        name = "dim_store"
+                        mode = "directLake"
+                        source = @{ type = "entity"; entityName = "dim_store" }
+                    }
+                )
+            }
+            # ... 他のディメンションテーブルも同じパターンで追加
+        )
+        relationships = @(
+            @{
+                name = "rel_fact_dim_store"
+                fromTable = "fact_sales"
+                fromColumn = "store_key"
+                toTable = "dim_store"
+                toColumn = "store_key"
+                crossFilteringBehavior = "oneDirection"
+            }
+            # ... 全リレーションシップを列挙
+        )
+        expressions = @(
+            @{
+                name = "DatabaseQuery"
+                kind = "m"
+                expression = "let Source = Sql.Database(""$sqlEndpointFqdn"", ""$databaseName"") in Source"
+            }
+        )
+    }
+}
+$modelBim = $modelBimObj | ConvertTo-Json -Depth 10
+
+# --- Base64 エンコード ---
+$pbismB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pbism))
+$modelBimB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($modelBim))
+
+# --- リクエストボディ ---
 $body = @{
-  displayName = "[名前]_model"
-  type = "SemanticModel"
-  definition = @{
-    parts = @(
-      @{ path = "definition.pbism"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pbism)); payloadType = "InlineBase64" },
-      @{ path = "model.bim"; payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($modelBim)); payloadType = "InlineBase64" }
-    )
-  }
+    displayName = "[名前]_model"
+    type = "SemanticModel"
+    definition = @{
+        parts = @(
+            @{ path = "definition.pbism"; payload = $pbismB64; payloadType = "InlineBase64" }
+            @{ path = "model.bim"; payload = $modelBimB64; payloadType = "InlineBase64" }
+        )
+    }
 } | ConvertTo-Json -Depth 5
 
-Invoke-RestMethod `
-  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/semanticModels" `
-  -Method POST -Headers @{ Authorization = "Bearer $token" } `
-  -ContentType "application/json" -Body $body
+# --- REST API 呼び出し + LRO ポーリング ---
+$response = Invoke-WebRequest `
+    -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/semanticModels" `
+    -Method POST `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $body
+
+if ($response.StatusCode -eq 202) {
+    $operationUrl = $response.Headers["Location"]
+    if ($operationUrl -is [array]) { $operationUrl = $operationUrl[0] }
+    Write-Host "LRO started: $operationUrl"
+    do {
+        Start-Sleep -Seconds 5
+        $status = Invoke-RestMethod -Uri $operationUrl -Headers @{ Authorization = "Bearer $token" }
+        Write-Host "  Status: $($status.status)"
+    } while ($status.status -notin @("Succeeded", "Failed"))
+    if ($status.status -eq "Failed") {
+        Write-Error "Semantic Model creation failed: $($status | ConvertTo-Json -Depth 3)"
+    } else {
+        Write-Host "✅ Semantic Model created"
+    }
+} elseif ($response.StatusCode -eq 201) {
+    $result = $response.Content | ConvertFrom-Json
+    $semanticModelId = $result.id
+    Write-Host "✅ Semantic Model created: $semanticModelId"
+} else {
+    Write-Error "Unexpected status: $($response.StatusCode) — $($response.Content)"
+}
 ```
 
-> これも LRO なので、202 の場合は Location ヘッダーでポーリングして完了を待つ。
-> model.bim には **全テーブル定義・全リレーションシップ・主要メジャー** を含めること。
+> **注意事項:**
+> - `$workspaceId`, `$token` は前のステップで取得済みの変数を使う
+> - **Python ではなく PowerShell** — JSON はハッシュテーブル + `ConvertTo-Json -Depth 10` で生成する
+> - `definition.pbism` は最小構成（`version` + `$schema` のみ）。`datasetReference` や `connections` を入れるとエラー
+> - model.bim は **TMSL 形式**（JSON）。Fabric は TMSL・TMDL 両対応だが、単一ファイルで済む TMSL を使う
+> - model.bim には **全テーブル定義・全リレーションシップ・主要メジャー** を含めること
+> - M 式の中のダブルクォートは PowerShell で `""` としてエスケープする
+> - LRO（202 Accepted）の場合は Location ヘッダーでポーリングして完了を待つ
 
 ### Step 6: Data Agent 作成（定義付き: データソース + AI インストラクション）
 Fabric REST API で **定義付き** で Data Agent を作成する。MCP の `onelake_item_create` は使わない。
@@ -500,6 +554,8 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 - **Lakehouse**: REST API `POST /v1/workspaces/{id}/lakehouses` で作成する。MCP の `onelake_item_create` は使わない（ワークスペース認識のタイミング問題を回避）
 - **CSV → Delta 変換**: Fabric REST API `Tables_LoadTable` → LRO ポーリングで完了確認
 - **Semantic Model**: REST API で **定義付き**（definition.pbism + model.bim）で作成する。MCP の `onelake_item_create` は使わない
+- **model.bim は TMSL 形式**（単一 JSON ファイル）を使う。TMDL 形式は使わない
+- **model.bim は PowerShell ハッシュテーブル** で構築し `ConvertTo-Json -Depth 10` で JSON に変換する。`-Depth` が浅いとネストが切り捨てられてエラーになる
 - **definition.pbism**: 最小構成（`version` + `$schema` のみ）を使う。`datasetReference` 等を入れるとエラー
 - **Data Agent**: REST API `POST /v1/workspaces/{id}/DataAgents` で **定義付き** で作成する（データソース・AI インストラクション・代表質問を含む）。MCP の `onelake_item_create` は使わない
 - **LRO 監視**: 202 Accepted が返ったら必ず Location ヘッダーでポーリングして完了を待つ
