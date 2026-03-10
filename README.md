@@ -29,22 +29,12 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 | GitHub Copilot | 拡張機能インストール済み（Agent モード対応） |
 | Azure CLI | `az` コマンドが利用可能なこと（Fabric REST API のトークン取得に使用） |
 | Node.js | 20 LTS 以降（Fabric MCP サーバーの実行に必要） |
+| Copilot ツール | Agent モードの **Configure Tools → Built-In** をすべて有効にしておくこと |
 
 **推奨拡張機能（オプション）:**
 - [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
 
-> **ターミナルツールについて:** Agent モードでのターミナル実行は `chat.agent.enabled`（デフォルト `true`）で有効化されています。フェーズ 0 の事前チェックとフェーズ 4 の REST API 呼び出しに必要です。
-
-**ターミナルが使えない場合は、以下を確認してください:**
-1. VS Code で **このリポジトリのルート** を開いているか（サブフォルダとして開くと `.vscode/settings.json` が認識されない）
-2. GitHub Copilot Chat 拡張機能が最新版か
-3. Agent モードが有効か — `settings.json` に以下が入っていることを確認:
-
-```json
-{
-   "chat.agent.enabled": true
-}
-```
+> **ツールの有効化:** Copilot Chat を Agent モードで開き、チャット入力欄の **ツールアイコン（🔧）** → **Configure Tools** → **Built-In** のチェックボックスをすべて有効にしてください。
 
 ### ターミナルコマンドの自動承認について
 
