@@ -195,9 +195,17 @@ Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspac
 > ⚠ **容量割り当てを忘れると `FeatureNotAvailable` エラーになる。** 必ず Lakehouse 作成前に実行する。
 
 ### Step 2: Lakehouse 作成
-`onelake_item_create` で Lakehouse を作成。
-パラメータ: `display-name`, `item-type`, `workspace`
-（SQL Analytics Endpoint は自動でプロビジョニングされる）
+Fabric REST API で Lakehouse を作成。Step 1 で取得した `$workspaceId` をそのまま使う。
+```powershell
+$lhResponse = Invoke-RestMethod `
+  -Uri "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/lakehouses" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" } `
+  -ContentType "application/json" `
+  -Body '{"displayName": "[名前]_lakehouse"}'
+$lakehouseId = $lhResponse.id
+```
+> LRO（202）が返る場合は Location ヘッダーでポーリングして完了を待つ。
+> SQL Analytics Endpoint は自動でプロビジョニングされる。
 
 ### Step 3: サンプルデータをアップロード
 `onelake_upload_file` で `demo-output/data/` の CSV を Lakehouse の `Files/` にアップロード。
@@ -482,6 +490,7 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 - **ファイル保存は絶対パスで行う** — ターミナルの cd に依存しない
 - **構築順序**: ワークスペース（+容量割り当て） → Lakehouse → CSV アップロード → Load Table → Semantic Model（定義付き） → Data Agent
 - **新規ワークスペースには必ず Fabric 容量を割り当てる**（`assignToCapacity`）
+- **Lakehouse**: REST API `POST /v1/workspaces/{id}/lakehouses` で作成する。MCP の `onelake_item_create` は使わない（ワークスペース認識のタイミング問題を回避）
 - **CSV → Delta 変換**: Fabric REST API `Tables_LoadTable` → LRO ポーリングで完了確認
 - **Semantic Model**: REST API で **定義付き**（definition.pbism + model.bim）で作成する。MCP の `onelake_item_create` は使わない
 - **definition.pbism**: 最小構成（`version` + `$schema` のみ）を使う。`datasetReference` 等を入れるとエラー

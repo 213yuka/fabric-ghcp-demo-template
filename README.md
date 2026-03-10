@@ -109,7 +109,7 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
    ↓
 ⑤ MCP ツール + Fabric REST API で自動デプロイ
    ├── 新規ワークスペース作成（+ 容量割り当て）
-   ├── Lakehouse 作成（MCP）
+   ├── Lakehouse 作成（REST API）
    ├── CSV アップロード（MCP）
    ├── CSV → Delta 変換（REST API + LRO ポーリング）
    ├── Semantic Model 作成（REST API、定義付き）
@@ -174,7 +174,7 @@ Fabric 環境:
 
 | ワークロード | 用途 | 作成方法 |
 |---|---|---|
-| Lakehouse | データ保存（ファクト＋ディメンション） | MCP で自動作成 |
+| Lakehouse | データ保存（ファクト＋ディメンション） | REST API で自動作成 |
 | SQL Analytics Endpoint | Delta テーブルへの SQL アクセス | Lakehouse と同時に自動作成 |
 | Semantic Model | スタースキーマの分析モデル（Direct Lake） | REST API で定義付き作成（自動） |
 | Data Agent | 自然言語でデータに質問 | REST API で定義付き作成（データソース・AIインストラクション自動設定） |

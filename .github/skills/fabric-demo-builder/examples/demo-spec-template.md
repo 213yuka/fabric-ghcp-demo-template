@@ -190,7 +190,7 @@ dim_[xxx] ── fact_[xxx] ── dim_[yyy]
 | Step | 操作 | ツール / API |
 |---|---|---|
 | 1 | 新規ワークスペース作成 | Fabric REST API |
-| 2 | Lakehouse 作成 | MCP `onelake_item_create` |
+| 2 | Lakehouse 作成 | REST API `POST /v1/workspaces/{id}/lakehouses` |
 | 3 | CSV アップロード | MCP `onelake_upload_file` |
 | 4 | CSV → Delta 変換 | ターミナルから Fabric REST API `Tables_LoadTable` |
 | 5 | Semantic Model 作成 | Fabric REST API（定義付き: definition.pbism + model.bim） |
