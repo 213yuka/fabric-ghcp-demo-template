@@ -27,10 +27,21 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 |---|---|
 | VS Code | 最新版 |
 | GitHub Copilot | 拡張機能インストール済み（Agent モード対応） |
+| Azure CLI | `az` コマンドが利用可能なこと（Fabric REST API のトークン取得に使用） |
 | Node.js | 20 LTS 以降（Fabric MCP サーバーの実行に必要） |
 
 **推奨拡張機能（オプション）:**
 - [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
+
+### GitHub Copilot の設定
+
+Agent モードでターミナルコマンドを実行するため、以下を有効化しておく:
+
+1. VS Code 設定（`Ctrl+,`）を開く
+2. `github.copilot.chat.agent.runInTerminal.enabled` を検索
+3. **チェックを入れて有効化** する
+
+> ❗ この設定が無効だと、フェーズ 4 の Fabric REST API 呼び出し（CSV → Delta 変換等）が失敗します。
 
 ### Fabric 権限
 
@@ -60,6 +71,17 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 ---
 
 ## クイックスタート
+
+### フェーズ概要
+
+`/fabric-demo-create` は **4 フェーズ** でデモ環境を構築します:
+
+| フェーズ | 内容 | 実行者 |
+|---|---|---|
+| **1. ヒアリング** | 業種・目的・追加データを確認 | ユーザーが回答 |
+| **2. MCP 調査** | Fabric API 仕様・アイテム定義を取得 | GHCP が自動実行 |
+| **3. 設計書 + データ生成** | スタースキーマ設計・変換済み CSV をローカルに出力 | GHCP が自動実行 |
+| **4. Fabric デプロイ** | Lakehouse・Semantic Model・Data Agent を作成・データ投入 | GHCP が MCP + REST API で自動実行 |
 
 ### 実行フロー
 
