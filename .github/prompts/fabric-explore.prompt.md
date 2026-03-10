@@ -1,5 +1,5 @@
 ---
-name: 'Fabric 調査'
+name: 'Fabric-Explore'
 description: 'Microsoft Fabric のワークロード、API、機能を調査する'
 agent: agent
 argument-hint: '調査したい Fabric の機能やワークロードを入力してください'

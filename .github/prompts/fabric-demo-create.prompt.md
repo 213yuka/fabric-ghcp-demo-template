@@ -1,5 +1,5 @@
 ---
-name: 'Fabric デモ構築'
+name: 'Fabric-Demo-Create'
 description: 'Fabric デモ環境を設計し、MCP ツールで GHCP 内から直接構築する'
 agent: agent
 argument-hint: '（空でOK — 実行後に質問に答えてください）'
