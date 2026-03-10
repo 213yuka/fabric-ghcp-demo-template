@@ -54,12 +54,15 @@ tools:
 
 ## フェーズ 2: MCP で調査
 
-ユーザーの回答に基づき、以下を実行:
+ユーザーの回答に基づき、以下を **必ず** 実行する:
 
-1. `publicapis_list` でワークロード一覧を確認
+1. `publicapis_list` でワークロード一覧を確認（**必須** — item-type の最新値を取得）
 2. `publicapis_get` で関連ワークロードの API 仕様を取得
 3. `publicapis_bestpractices_itemdefinition_get` でアイテム定義を取得
 4. 必要に応じて `microsoft_docs_search` で補完
+
+> **ワークロード名や item-type を固定文字列で決め打ちしない。**
+> 必ず `publicapis_list` の結果を使うこと。
 
 ---
 
@@ -69,6 +72,15 @@ tools:
 
 ### `demo-output/demo-spec.md`
 [デモ設計書テンプレート](../skills/fabric-demo-builder/examples/demo-spec-template.md) に従って生成。
+
+**必須セクション:**
+- シナリオ概要
+- アーキテクチャ図
+- スタースキーマ設計（ER 図 + テーブル定義）
+- サンプルデータ抜粋
+- 構築手順（MCP + ポータル）
+- **代表質問セット**（5〜10 個）
+- Data Agent 設計（データソース、スコープ、インストラクション案）
 
 ### `demo-output/data/*.csv`
 スタースキーマに基づく **変換済み** サンプルデータ:
@@ -86,6 +98,7 @@ CSV データの要件:
 ## フェーズ 4: Fabric 環境を構築（MCP ツールで実行）
 
 ローカルファイル生成後、**そのまま MCP ツールで Fabric 環境を構築** する。
+**構築順序を厳守すること**: Lakehouse → CSV → Semantic Model → Data Agent
 
 ### Step 1: ワークスペース確認
 `onelake_workspace_list` でワークスペースを一覧表示し、ユーザーにデプロイ先を選んでもらう。
@@ -102,6 +115,7 @@ CSV データの要件:
 
 ### Step 5: Data Agent 作成
 `onelake_item_create` で DataAgent を作成。
+**Semantic Model が作成済みであること。**
 
 ### Step 6: 完了報告 + ポータル設定ガイド
 作成したリソースの一覧と、ポータルで必要な設定を案内:
@@ -118,6 +132,12 @@ CSV データの要件:
 1. Lakehouse を開く → Files/ 内の各 CSV を右クリック → 「Load to Tables」
 2. SQL Analytics Endpoint → モデル レイアウト → テーブル追加 + リレーションシップ設定
 3. Data Agent → データソースとして Semantic Model を選択
+4. Data Agent で代表質問セットを使って動作検証
+
+💡 代表質問セット:
+- [質問 1]
+- [質問 2]
+- ...
 ```
 
 ---
@@ -129,6 +149,7 @@ CSV データの要件:
 - ディメンションテーブル: `dim_` プレフィックス、テキスト属性 + サロゲートキー
 - `dim_date` は全デモ共通で必ず含める
 - 日本語の値を含める（カテゴリ名、月名、曜日 等）
+- テーブル名・カラム名は業務用語で明確に命名する
 
 ---
 
@@ -139,3 +160,5 @@ CSV データの要件:
 - 回答後は **フェーズ 2〜4 を一気に実行** する
 - Fabric 環境の構築は **MCP OneLake ツールで GHCP 内から直接実行** する
 - CSV は **変換済み**（スタースキーマ形式）で生成 — ETL / Notebook は不要
+- **構築順序**: Lakehouse → CSV アップロード → Semantic Model → Data Agent
+- **代表質問セット** を必ず設計書に含める

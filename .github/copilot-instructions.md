@@ -10,6 +10,7 @@ GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ
 - セマンティックモデルは **スタースキーマ** で設計する
 - CSV データは **変換済み（スタースキーマ形式）** で生成する（ETL 不要）
 - Microsoft ドキュメントは **MS Learn MCP サーバー** で検索する
+- MCP で参照した公式資料は **タイトル・URL・要点** を回答に残す
 
 ## MCP サーバー
 
