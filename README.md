@@ -48,16 +48,25 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 
 ### ターミナルコマンドの自動承認について
 
-> **⚠️ セキュリティに関する重要な注意**
+このテンプレートでは `chat.tools.terminal.autoApprove` で **安全な読み取り系コマンドのみ** を自動承認しています:
+
+```jsonc
+"chat.tools.terminal.autoApprove": {
+    "az account get-access-token": true,  // Fabric REST API のトークン取得
+    "Get-ChildItem": true,                // ファイル一覧
+    "Test-Path": true,                    // ファイル存在確認
+    "Get-Content": true,                  // ファイル読み取り
+    "Get-Location": true                  // カレントディレクトリ確認
+}
+```
+
+リソース作成・変更を伴うコマンド（`Invoke-WebRequest`, `Invoke-RestMethod` 等）は自動承認に **含めていません**。実行時に確認ダイアログが表示されるので、内容を確認してから承認してください。
+
+> **⚠️ コマンド追加時の注意**
 >
-> このテンプレートの `.vscode/settings.json` には `"chat.tools.global.autoApprove": true` が設定されています。これは Agent モードが実行する **すべてのツール呼び出し（ターミナルコマンド、MCP ツール等）を確認なしで自動実行** する設定です。デモ環境の繰り返し検証を効率化するために有効にしていますが、**セキュリティ保護が無効化されます。**
+> 自動承認するコマンドを追加する場合は、ファイルを壊さない検索・参照系のコマンドに限定してください。`rm`, `Remove-Item`, `del` など **削除系コマンドは絶対に追加しないでください**。最悪の場合、重要なファイルが消えます。
 >
-> **利用者の責任で以下を理解したうえで使用してください:**
-> - Agent が実行するコマンドは **Azure リソースの作成・変更・削除** を伴います
-> - トークンが漏洩するリスクや、意図しないリソース作成の可能性があります
-> - 本番環境や機密データがある環境では **この設定を `false` にするか、削除することを強く推奨** します
->
-> 自動承認を無効にする場合は、`.vscode/settings.json` から `"chat.tools.global.autoApprove": true` を削除してください。その場合、Agent がコマンドを実行するたびに確認ダイアログが表示されます。
+> すべてのツール呼び出しを自動承認したい場合は `"chat.tools.global.autoApprove": true` を設定できますが、セキュリティ保護が無効化されるため推奨しません。
 
 ### Fabric 権限
 

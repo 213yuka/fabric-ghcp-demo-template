@@ -9,5 +9,11 @@
     ".github/prompts": true
   },
   "chat.agent.enabled": true,
-  "chat.tools.global.autoApprove": true
+  "chat.tools.terminal.autoApprove": {
+    "az account get-access-token": true,
+    "Get-ChildItem": true,
+    "Test-Path": true,
+    "Get-Content": true,
+    "Get-Location": true
+  }
 }
