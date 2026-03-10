@@ -30,12 +30,7 @@ tools:
 2️⃣ デモの目的・対象者
    例: 経営層向けに Fabric の価値をアピール、エンジニア向けハンズオン など
 
-3️⃣ デモの規模
-   • ミニマル — Lakehouse + Semantic Model + Data Agent
-   • 標準     — 上記 + Pipeline + Power BI Report
-   • フル     — 標準 + Eventstream/KQL + AI/ML
-
-4️⃣ 追加データ（任意）
+3️⃣ 追加データ（任意）
    デモに組み込みたいファイルがあれば添付してください。
    例: アンケート結果の Excel、業務データの CSV、マスタ一覧 など
    （なければ「なし」でOK — サンプルデータを自動生成します）
