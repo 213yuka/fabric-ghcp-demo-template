@@ -33,15 +33,7 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 **推奨拡張機能（オプション）:**
 - [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
 
-### GitHub Copilot の設定
-
-Agent モードでターミナルコマンドを実行するため、以下を有効化しておく:
-
-1. VS Code 設定（`Ctrl+,`）を開く
-2. `github.copilot.chat.agent.runInTerminal.enabled` を検索
-3. **チェックを入れて有効化** する
-
-> ❗ この設定が無効だと、フェーズ 4 の Fabric REST API 呼び出し（CSV → Delta 変換等）が失敗します。
+> **ターミナルツールについて:** Agent モードでのターミナル実行（`github.copilot.chat.agent.runInTerminal.enabled`）は `.vscode/settings.json` で有効化済みです。フェーズ 4 の REST API 呼び出しに必要です。
 
 ### Fabric 権限
 

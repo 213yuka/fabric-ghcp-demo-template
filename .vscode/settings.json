@@ -7,5 +7,6 @@
   },
   "chat.promptFilesLocations": {
     ".github/prompts": true
-  }
+  },
+  "github.copilot.chat.agent.runInTerminal.enabled": true
 }
