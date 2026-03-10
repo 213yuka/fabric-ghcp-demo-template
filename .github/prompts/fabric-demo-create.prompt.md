@@ -468,10 +468,10 @@ $stageConfig = @{
 
 $datasource = @{
   '$schema' = "1.0.0"
-  artifactId = "$lakehouseId"
+  artifactId = "$semanticModelId"
   workspaceId = "$workspaceId"
-  displayName = "[Lakehouse名]"
-  type = "lakehouse-tables"
+  displayName = "[SemanticModel名]"
+  type = "semantic_model"
   userDescription = "[データソースの説明]"
   dataSourceInstructions = @"
 ## テーブル構造
@@ -496,8 +496,8 @@ $fewshots = @{
 } | ConvertTo-Json -Depth 3
 
 # Data Agent 名とデータソースパスの設定
-$dataSourceType = "lakehouse"
-$dataSourceName = "[Lakehouse名]"
+$dataSourceType = "semantic_model"
+$dataSourceName = "[SemanticModel名]"
 
 $body = @{
   displayName = "[名前]_agent"
@@ -519,7 +519,7 @@ Invoke-RestMethod `
 ```
 
 > これも LRO なので、202 の場合は Location ヘッダーでポーリングして完了を待つ。
-> データソース type は Lakehouse なら `lakehouse-tables`、Semantic Model なら `semantic_model` を指定。
+> データソース type は **`semantic_model` を使う**（Semantic Model 経由でメジャー・リレーションシップが活用される）。Lakehouse 直接（`lakehouse-tables`）は使わない。
 > 参考: [Data Agent definition](https://learn.microsoft.com/rest/api/fabric/articles/item-management/definitions/data-agent-definition)
 
 ### Step 7: 完了報告

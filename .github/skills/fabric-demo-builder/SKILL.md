@@ -163,7 +163,7 @@ Data Agent が正確なクエリを生成するために、以下のベストプ
 
 | 設定 | 内容 | 設定方法 |
 |---|---|---|
-| データソース | Lakehouse または Semantic Model を追加（最大5つ） | REST API: definition の datasource.json で指定 |
+| データソース | **Semantic Model** を指定（最大5つ） | REST API: definition の datasource.json で type=`semantic_model` |
 | エージェントインストラクション | 回答ルール・業務用語・日付の定義 | REST API: definition の stage_config.json で指定 |
 | データソースインストラクション | テーブル構造・リレーション・クエリロジック | REST API: datasource.json の dataSourceInstructions で指定 |
 | 代表質問セット | 動作検証用の質問例 | REST API: fewshots.json で指定 + 設計書に記載 |
@@ -172,7 +172,7 @@ Data Agent が正確なクエリを生成するために、以下のベストプ
 
 | カテゴリ | ルール |
 |---|---|
-| データソース | Semantic Model を優先的に使う。Lakehouse は補完用途 |
+| データソース | **Semantic Model を使う**（メジャー・リレーションシップが活用される。Lakehouse 直接指定は使わない） |
 | スコープ | 1 エージェントに複数ドメインを詰め込みすぎない |
 | 命名 | テーブル名・列名・メジャー名を業務用語で整える |
 | KPI 定義 | 集計粒度、日付の定義（年度 vs 暦年等）を明示する |
@@ -308,11 +308,11 @@ POST https://api.fabric.microsoft.com/v1/workspaces/{workspaceId}/DataAgents
 definition に以下の parts を含める:
 - `Files/Config/data_agent.json` — `{"$schema": "2.1.0"}`
 - `Files/Config/draft/stage_config.json` — AI インストラクション
-- `Files/Config/draft/{type}-{name}/datasource.json` — データソース設定（Lakehouse の artifactId, workspaceId, type を指定）
+- `Files/Config/draft/{type}-{name}/datasource.json` — データソース設定（Semantic Model の artifactId, workspaceId, type=`semantic_model` を指定）
 - `Files/Config/draft/{type}-{name}/fewshots.json` — 代表質問セット
 
 **Semantic Model が作成済みであること。**
-Data Agent のデータソースには Lakehouse（type: `lakehouse-tables`）または Semantic Model（type: `semantic_model`）を指定できる。
+Data Agent のデータソースには **Semantic Model（type: `semantic_model`）を使う**。メジャー・リレーションシップが活用されるため Lakehouse 直接指定より精度が高い。
 
 > 参考: [Data Agent definition](https://learn.microsoft.com/rest/api/fabric/articles/item-management/definitions/data-agent-definition)
 
