@@ -15,7 +15,7 @@ description: >
 
 Fabric MCP の OneLake ツール + Fabric REST API を使って、Data Agent デモ環境を構築するスキル。
 CSV データは **変換済み（スタースキーマ形式）** で生成するため ETL は不要。
-全アイテムの作成・設定が GHCP 内で完結する。ポータルでの手動設定は不要。
+全アイテムの作成・設定が GHCP 内で完結する。ポータルでの手動設定は Approved for Copilot のみ。
 各フェーズ開始時に `現在の進捗: フェーズ X/5 - [フェーズ名]` を表示し、全 5 フェーズ中の現在位置をユーザーに明示する。
 
 ---
@@ -345,6 +345,32 @@ $databaseName = $lhInfo.displayName
 > - model に `culture: "ja-JP"` と `defaultPowerBIDataSourceVersion: "powerBI_V3"` を含める。
 > - `Invoke-WebRequest` で呼び出し、202 の場合は Location ヘッダーで LRO ポーリング。
 
+### Step 5.5: Semantic Model 設定（大規模ストレージ形式 + Approved for Copilot）
+
+Semantic Model 作成後、以下の設定を適用する。
+
+#### 大規模ストレージ形式の有効化（REST API で自動設定）
+
+Power BI REST API で `targetStorageMode` を `PremiumFiles` に設定する:
+```powershell
+$patchBody = '{"targetStorageMode": "PremiumFiles"}'
+Invoke-RestMethod `
+    -Uri "https://api.powerbi.com/v1.0/myorg/groups/$workspaceId/datasets/$semanticModelId" `
+    -Method PATCH `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $patchBody
+```
+> - `$semanticModelId` は Step 5 の作成レスポンスから取得。
+> - Fabric 容量（F-SKU）であれば利用可能。
+> - 参考: [Power BI REST API - Update Dataset In Group](https://learn.microsoft.com/rest/api/power-bi/datasets/update-dataset-in-group)
+
+#### セマンティックモデルのAI 用のデータを準備する（ポータルで手動設定）
+
+> ⚠ この設定（Approved for Copilot）は REST API では設定できない。
+> Fabric ポータル → Semantic Model → 設定 → 「Approved for Copilot」チェックボックスをオンにして Apply。
+> 参考: [Prepare your data for AI](https://learn.microsoft.com/power-bi/create-reports/copilot-prepare-data-ai#mark-your-model-as-approved-for-copilot)
+
 ### Step 6: Data Agent 作成（定義付き: データソース + AI インストラクション）
 Fabric REST API で **定義付き** で Data Agent を作成する。
 ```
@@ -365,11 +391,12 @@ Data Agent のデータソースには **Semantic Model（type: `semantic_model`
 
 ## 完了確認
 
-MCP + REST API で全アイテムの作成・設定が完了する。ポータルでの手動設定は不要:
+MCP + REST API で全アイテムの作成・設定が完了する。ポータルでの手動設定は 1 件のみ:
 
-1. **Semantic Model** — REST API で定義付きで作成済み。リレーションシップ・メジャーが設定済み。
-2. **Data Agent** — REST API で定義付きで作成済み。データソース・AI インストラクション・代表質問が設定済み。
-3. **動作検証** — 代表質問セットで回答品質を確認
+1. **Semantic Model** — REST API で定義付きで作成済み。リレーションシップ・メジャーが設定済み。大規模ストレージ形式は REST API で自動有効化済み。
+2. **Approved for Copilot** — ポータルで手動設定が必要（REST API 未提供）。Fabric ポータル → SM 設定 → 「Approved for Copilot」をオン。
+3. **Data Agent** — REST API で定義付きで作成済み。データソース・AI インストラクション・代表質問が設定済み。
+4. **動作検証** — 代表質問セットで回答品質を確認
 
 ---
 

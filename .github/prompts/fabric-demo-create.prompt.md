@@ -441,6 +441,39 @@ if ($response.StatusCode -eq 202) {
 > - M 式の中のダブルクォートは PowerShell で `""` としてエスケープする
 > - LRO（202 Accepted）の場合は Location ヘッダーでポーリングして完了を待つ
 
+### Step 5.5: Semantic Model 設定（大規模ストレージ形式 + セマンティックモデルのAI 用のデータを準備する）
+
+Semantic Model 作成後、以下の設定を適用する。
+
+#### 5.5a: 大規模ストレージ形式の有効化
+
+Power BI REST API で `targetStorageMode` を `PremiumFiles` に設定する:
+
+```powershell
+# $semanticModelId は Step 5 で取得済み
+$token = (az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv)
+
+$patchBody = '{"targetStorageMode": "PremiumFiles"}'
+Invoke-RestMethod `
+    -Uri "https://api.powerbi.com/v1.0/myorg/groups/$workspaceId/datasets/$semanticModelId" `
+    -Method PATCH `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $patchBody
+
+Write-Host "✅ 大規模ストレージ形式を有効化しました"
+```
+
+#### 5.5b: セマンティックモデルのAI 用のデータを準備する（Approved for Copilot）
+
+> ⚠ この設定は REST API では設定できない（ポータル専用）。
+> Semantic Model 作成後、Fabric ポータルで以下を手動設定する:
+> 1. ワークスペース → Semantic Model → **設定**（⚙）を開く
+> 2. **Approved for Copilot**（旧称: AI preparation / Prepped for AI）セクションを展開
+> 3. チェックボックスをオンにして **Apply** をクリック
+>
+> 参考: [Prepare your data for AI](https://learn.microsoft.com/power-bi/create-reports/copilot-prepare-data-ai#mark-your-model-as-approved-for-copilot)
+
 ### Step 6: Data Agent 作成（定義付き: データソース + AI インストラクション）
 Fabric REST API で **定義付き** で Data Agent を作成する。MCP の `onelake_item_create` は使わない。
 **Semantic Model が作成済みであること。**
@@ -580,17 +613,20 @@ Invoke-RestMethod `
 > 参考: [Data Agent definition](https://learn.microsoft.com/rest/api/fabric/articles/item-management/definitions/data-agent-definition)
 
 ### Step 7: 完了報告
-作成したリソースの一覧を報告。全アイテムの作成・設定が GHCP 内で完了:
+作成したリソースの一覧を報告:
 
 ```
-✅ デモ環境の構築が完了しました（全自動）:
+✅ デモ環境の構築が完了しました:
 - ワークスペース: [name]
 - Lakehouse: [名前]_lakehouse
 - Delta テーブル: fact_xxx, dim_xxx, dim_date（変換済み）
 - Semantic Model: [名前]_model（定義付き: テーブル・リレーションシップ・メジャー設定済み）
+  - 大規模ストレージ形式: ✅ 有効化済み（REST API で自動設定）
+  - セマンティックモデルのAI 用のデータを準備する: 📋 ポータルで手動設定が必要（下記参照）
 - Data Agent: [名前]_agent（定義付き: データソース・AI インストラクション・代表質問設定済み）
 
-📋 ポータルでの手動設定は不要です。
+📋 ポータルでの手動設定（1 件のみ）:
+Semantic Model の設定 → 「Approved for Copilot」チェックボックスをオンにして Apply
 
 🔍 動作検証:
 Fabric ポータルで Data Agent を開き、以下の代表質問で動作を確認してください:
@@ -637,7 +673,7 @@ Data Agent が正確にクエリを生成できるよう、以下を徹底する
 - **REST API 呼び出しは PowerShell（`Invoke-WebRequest` / `Invoke-RestMethod`）推奨** — Python でも可
 - CSV は **変換済み**（スタースキーマ形式）で生成 — ETL / Notebook は不要
 - **ファイル保存は絶対パスで行う** — ターミナルの cd に依存しない
-- **構築順序**: ワークスペース（+容量割り当て） → Lakehouse → CSV アップロード → Load Table → Semantic Model（定義付き） → Data Agent
+- **構築順序**: ワークスペース（+容量割り当て） → Lakehouse → CSV アップロード → Load Table → Semantic Model（定義付き） → SM 設定（大規模ストレージ形式） → Data Agent
 - **新規ワークスペースには必ず Fabric 容量を割り当てる**（`assignToCapacity`）
 - **Lakehouse**: REST API `POST /v1/workspaces/{id}/lakehouses` で作成する。MCP の `onelake_item_create` は使わない（ワークスペース認識のタイミング問題を回避）
 - **CSV → Delta 変換**: Fabric REST API `Tables_LoadTable` → LRO ポーリングで完了確認

@@ -3,19 +3,19 @@
 GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境を構築するテンプレート。
 
 > **🚀 GHCP チャット内で、Lakehouse 作成からデータ投入・テーブル変換まで自動実行。**
-> Semantic Model ・ Data Agent のアイテム作成も GHCP 内で完了します。
+> Semantic Model や Data Agent のリソース作成も GHCP 内で完了します。
 
 ---
 
 ## できること
 
-- 新規ワークスペース作成（毎回）
+- 新規ワークスペース作成
 - Lakehouse 作成・変換済みサンプルデータ投入
 - CSV → Delta テーブル変換（REST API で自動）
 - Semantic Model 作成（TMSL 定義付き: テーブル・リレーションシップ・メジャー）
 - Data Agent 作成（自然言語でデータに質問）
 
-**主要な構築作業は GHCP チャット内で完結。ポータルでの手動設定は不要です。**
+**主要な構築作業は GHCP チャット内で完結。ポータルでの手動設定は Approved for Copilot のみです。**
 
 ---
 
