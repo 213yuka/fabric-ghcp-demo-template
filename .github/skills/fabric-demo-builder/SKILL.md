@@ -3,7 +3,7 @@ name: fabric-demo-builder
 description: >
   Microsoft Fabric のデモ環境を GHCP 内で構築するスキル。
   Fabric MCP の OneLake ツール + Fabric REST API で、ワークスペース作成から Data Agent 構築まで
-  Copilot 内で実行する。**Fabric ポータルを一切開かずに完結。**
+  GHCP 内で実行する。**Fabric ポータルを一切開かずに完結。**
   データモデルはスタースキーマで設計する。
   CSV は変換済み（ETL 不要）の状態で生成し、Tables_LoadTable API で Delta に変換する。
   Semantic Model は TMDL 定義付きで作成し、テーブル・リレーションシップ・メジャーまで自動構成する。

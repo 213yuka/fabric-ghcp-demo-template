@@ -1,6 +1,6 @@
 # Fabric GHCP デモテンプレート
 
-GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ環境を構築するテンプレート。
+GitHub Copilot (GHCP) Agent モード + Fabric MCP サーバーで、Fabric のデモ環境を構築するテンプレート。
 
 ## 基本方針
 
@@ -32,5 +32,5 @@ GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ
 ## 使い方
 
 1. `/fabric-demo-create` を実行して質問に答える（追加データの添付も可能）
-2. Copilot が設計書 + 変換済みサンプルデータを生成し、MCP ツール + Fabric REST API で Fabric に自動デプロイする
+2. GHCP が設計書 + 変換済みサンプルデータを生成し、MCP ツール + Fabric REST API で Fabric に自動デプロイする
 3. 完了 — Fabric ポータルを開く必要なし
