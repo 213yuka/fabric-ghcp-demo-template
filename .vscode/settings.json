@@ -8,5 +8,5 @@
   "chat.promptFilesLocations": {
     ".github/prompts": true
   },
-  "github.copilot.chat.agent.runInTerminal.enabled": true
+  "chat.agent.enabled": true
 }

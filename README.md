@@ -33,17 +33,18 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 **推奨拡張機能（オプション）:**
 - [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
 
-> **ターミナルツールについて:** Agent モードでのターミナル実行（`github.copilot.chat.agent.runInTerminal.enabled`）は `.vscode/settings.json` で有効化済みです。フェーズ 0 の事前チェックとフェーズ 4 の REST API 呼び出しに必要です。
+> **ターミナルツールについて:** Agent モードでのターミナル実行は `chat.agent.enabled`（デフォルト `true`）で有効化されています。フェーズ 0 の事前チェックとフェーズ 4 の REST API 呼び出しに必要です。
 
-**このセッションには端末実行機能がない** と表示された場合は、[.vscode/settings.json](.vscode/settings.json) に次の設定が入っていることを明示的に確認する:
+**ターミナルが使えない場合は、以下を確認してください:**
+1. VS Code で **このリポジトリのルート** を開いているか（サブフォルダとして開くと `.vscode/settings.json` が認識されない）
+2. GitHub Copilot Chat 拡張機能が最新版か
+3. Agent モードが有効か — `settings.json` に以下が入っていることを確認:
 
 ```json
 {
-   "github.copilot.chat.agent.runInTerminal.enabled": true
+   "chat.agent.enabled": true
 }
 ```
-
-リポジトリ既定では有効化済みだが、VS Code を **このリポジトリのルートで開いていない** 場合や、ワークスペース設定が反映されていない場合は無効扱いになることがある。
 
 ### Fabric 権限
 

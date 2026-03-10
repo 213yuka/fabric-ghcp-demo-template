@@ -24,15 +24,17 @@ tools:
 
 フェーズ 1 のヒアリングの **前に**、以下を確認する。問題があればユーザーに対処を促す。
 
-> **重要**: 「このセッションには端末実行機能がないため、以下は未確認です」と表示された場合は、まず [.vscode/settings.json](../../.vscode/settings.json) の `github.copilot.chat.agent.runInTerminal.enabled` が `true` であることをユーザーに明示する。必要なら次の JSON をそのまま案内する:
+> **重要**: ターミナルコマンドが実行できない場合は、以下をユーザーに案内する:
+> 1. VS Code で **このリポジトリのルートを開いているか** 確認（サブフォルダだと `.vscode/settings.json` が認識されない）
+> 2. [.vscode/settings.json](../../.vscode/settings.json) に `"chat.agent.enabled": true` があるか確認
 >
 > ```json
 > {
->   "github.copilot.chat.agent.runInTerminal.enabled": true
+>   "chat.agent.enabled": true
 > }
 > ```
 >
-> そのうえで、**このリポジトリのルートを VS Code で開いているか** も確認する。ワークスペースルートがずれると設定が反映されない。
+> `chat.agent.enabled` は VS Code のデフォルトで `true` だが、組織ポリシーで無効化されている場合がある。
 
 ### 1. Azure CLI ログイン状態
 ターミナルで以下を実行:
