@@ -30,6 +30,6 @@ GitHub Copilot (Agent モード) + Fabric MCP サーバーで、Fabric のデモ
 
 ## 使い方
 
-1. `/fabric-demo-create` を実行して質問に答える（追加データの添付も可能）
+1. `/Fabric-デモ構築` を実行して質問に答える（追加データの添付も可能）
 2. Copilot が設計書 + 変換済みサンプルデータを生成し、MCP ツールで Fabric にデプロイする
 3. Fabric ポータルで初期設定（Load to Tables → Semantic Model 設定 → Data Agent 設定）
