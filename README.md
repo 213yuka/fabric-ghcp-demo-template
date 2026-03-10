@@ -200,7 +200,7 @@ Fabric 環境:
 |---|---|
 | Semantic Model の設定 | REST API で定義付き（definition.pbism + model.bim）で作成。テーブル・リレーションシップ・メジャーが自動設定済み |
 | Data Agent のデータソース | REST API で定義付き（datasource.json + stage_config.json）で作成。データソース・AIインストラクションが自動設定済み |
-| Data Agent の対応範囲 | Semantic Model または Lakehouse に対する自然言語クエリのみ（現時点ではリアルタイムデータ非対応） |
+| Data Agent のデータソース | **Semantic Model のみ**。Lakehouse 直接指定（`lakehouse-tables`）は使わない（メジャー・リレーションシップが活用されず回答精度が低下するため） |
 | ワークロード名・item-type | Fabric API の仕様変更に左右されるため、構築前に必ず `publicapis_list` で確認する |
 
 ---

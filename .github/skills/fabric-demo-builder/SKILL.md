@@ -217,7 +217,7 @@ Data Agent が正確なクエリを生成するために、以下のベストプ
 
 | カテゴリ | ルール |
 |---|---|
-| データソース | **Semantic Model を使う**（メジャー・リレーションシップが活用される。Lakehouse 直接指定は使わない） |
+| データソース | **Semantic Model（type: `semantic_model`）のみ使う**。❌ Lakehouse 直接指定（`lakehouse-tables`）は**絶対に使わない**（メジャー・リレーションシップが無視され回答精度が大幅に低下する） |
 | スコープ | 1 エージェントに複数ドメインを詰め込みすぎない（§2） |
 | 命名 | テーブル名・列名・メジャー名を業務用語で整える（§1） |
 | KPI 定義 | 集計粒度、日付の定義（年度 vs 暦年等）を明示する（§5） |
@@ -357,7 +357,12 @@ definition に以下の parts を含める:
 - `Files/Config/draft/{type}-{name}/fewshots.json` — 代表質問セット
 
 **Semantic Model が作成済みであること。**
-Data Agent のデータソースには **Semantic Model（type: `semantic_model`）を使う**。メジャー・リレーションシップが活用されるため Lakehouse 直接指定より精度が高い。
+Data Agent のデータソースには **Semantic Model（type: `semantic_model`）を必ず使う**。メジャー・リレーションシップが活用されるため Lakehouse 直接指定より精度が高い。
+**❌ Lakehouse 直接指定（`lakehouse-tables`）は絶対に使わない。**
+
+> **重要**: Step 5 の Semantic Model 作成後に `$semanticModelId` を必ず取得・検証すること。
+> LRO（202）の場合は完了後にワークスペース内の SM 一覧から ID を取得する。
+> `$semanticModelId` が空のまま Data Agent を作成しない。
 
 > 参考: [Data Agent definition](https://learn.microsoft.com/rest/api/fabric/articles/item-management/definitions/data-agent-definition)
 
