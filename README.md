@@ -27,20 +27,20 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 |---|---|
 | OS / シェル | **Windows + PowerShell 5.1 以降**（スクリプト・REST API 呼び出しが PowerShell 前提） |
 | VS Code | 最新版 |
-| GitHub Copilot | 拡張機能インストール済み（Agent モード対応） |
+| GitHub Copilot Chat | 拡張機能インストール済み（Agent モード対応） |
 | Azure CLI | `az` コマンドが利用可能なこと（Fabric REST API のトークン取得に使用） |
 | Node.js | 20 LTS 以降（Fabric MCP サーバーの実行に必要） |
 | Copilot ツール | Agent モードでターミナル実行を含む **Built-In ツールが使えること** |
 
 > **VS Code の Copilot 拡張機能は必須です。**
-> GitHub Copilot の Agent モード（ターミナル実行、ファイル編集、MCP サーバー接続など）は、以下の 2 つの拡張機能が提供する機能です。これらがないと本テンプレートは動作しません。
+> GitHub Copilot の Agent モード（ターミナル実行、ファイル編集、MCP サーバー接続など）は、**GitHub Copilot Chat** 拡張機能が提供する機能です。この拡張機能がないと本テンプレートは動作しません。
 >
 > | 拡張機能 | 役割 |
 > |---|---|
-> | **GitHub Copilot** | コード補完・チャット基盤 |
-> | **GitHub Copilot Chat** | Agent モード・ツール利用・MCP 連携 |
+> | **GitHub Copilot Chat** | コード補完・Agent モード・ツール利用・MCP 連携 |
 >
-> どちらも VS Code の拡張機能マーケットプレイスからインストールできます（GitHub Copilot のサブスクリプションが必要）。
+> VS Code の拡張機能マーケットプレイスからインストールできます（GitHub Copilot のサブスクリプションが必要）。
+> ※ 旧 `GitHub Copilot` 拡張機能は非推奨です。`GitHub Copilot Chat` に統合されました。
 
 **推奨拡張機能（オプション）:**
 - [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
