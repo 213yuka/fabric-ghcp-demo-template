@@ -5,6 +5,7 @@
       "type": "http",
       "url": "https://learn.microsoft.com/api/mcp"
     },
+    // 本番運用では @latest を特定バージョン（例: @microsoft/fabric-mcp@0.x.x）に固定することを推奨
     "fabric-mcp-server": {
       "command": "npx",
       "args": [

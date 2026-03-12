@@ -37,28 +37,30 @@
 ## Fabric ワークスペース構成
 
 ```
-ワークスペース: [シナリオ名]-demo
+ワークスペース: demo-[シナリオ名]-[YYYYMMDD]
 ├── Lakehouse: [名前]_lakehouse
 │   ├── Tables/
-│   │   ├── [テーブル1]
-│   │   └── [テーブル2]
+│   │   ├── fact_[テーブル1]
+│   │   ├── dim_[テーブル2]
+│   │   └── dim_date
 │   └── Files/
-│       └── raw/
-├── Notebook: [名前]_etl_notebook
-├── Data Pipeline: [名前]_pipeline
-├── Semantic Model: [名前]_model
-└── Power BI Report: [名前]_report
+│       └── *.csv（アップロード済みの変換済みCSV）
+├── SQL Analytics Endpoint（Lakehouse と同時に自動作成）
+├── Semantic Model: [名前]_model（Direct Lake、スタースキーマ）
+└── Data Agent: [名前]_agent（自然言語クエリ）
 ```
+
+> **Notebook・Pipeline・Power BI Report は作成しない。** CSV は変換済みで生成するため ETL 不要。分析は Data Agent で自然言語クエリを使用する。
 
 ## デモストーリー
 
 | ステップ | 内容 | 所要時間 | 見せるもの |
 |---|---|---|---|
 | 1. 導入 | 課題とゴールの説明 | 3分 | スライド |
-| 2. データ取り込み | Pipeline でデータを投入 | 5分 | Data Pipeline 画面 |
-| 3. データ加工 | Notebook で変換処理 | 7分 | Notebook 実行 |
-| 4. 分析・可視化 | Power BI レポートを表示 | 10分 | ダッシュボード |
-| 5. まとめ | Fabric の価値を要約 | 5分 | スライド |
+| 2. 環境紹介 | Fabric ワークスペースと Lakehouse の構成を紹介 | 5分 | Fabric ポータル |
+| 3. データ確認 | Delta テーブルのスタースキーマ構成を確認 | 5分 | SQL Analytics Endpoint |
+| 4. Data Agent デモ | 自然言語でデータに質問し、回答を確認 | 12分 | Data Agent 画面 |
+| 5. まとめ | Fabric + Data Agent の価値を要約 | 5分 | スライド |
 
 ## 補足事項
 

@@ -21,48 +21,36 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 
 ## 前提条件
 
-### 環境
+### 検証済環境
 
 | 項目 | 要件 |
 |---|---|
+| OS / シェル | **Windows + PowerShell 5.1 以降**（スクリプト・REST API 呼び出しが PowerShell 前提） |
 | VS Code | 最新版 |
 | GitHub Copilot | 拡張機能インストール済み（Agent モード対応） |
 | Azure CLI | `az` コマンドが利用可能なこと（Fabric REST API のトークン取得に使用） |
 | Node.js | 20 LTS 以降（Fabric MCP サーバーの実行に必要） |
-| Copilot ツール | Agent モードの **Configure Tools → Built-In** をすべて有効にしておくこと |
+| Copilot ツール | Agent モードでターミナル実行を含む **Built-In ツールが使えること** |
+
+> **VS Code の Copilot 拡張機能は必須です。**
+> GitHub Copilot の Agent モード（ターミナル実行、ファイル編集、MCP サーバー接続など）は、以下の 2 つの拡張機能が提供する機能です。これらがないと本テンプレートは動作しません。
+>
+> | 拡張機能 | 役割 |
+> |---|---|
+> | **GitHub Copilot** | コード補完・チャット基盤 |
+> | **GitHub Copilot Chat** | Agent モード・ツール利用・MCP 連携 |
+>
+> どちらも VS Code の拡張機能マーケットプレイスからインストールできます（GitHub Copilot のサブスクリプションが必要）。
 
 **推奨拡張機能（オプション）:**
 - [Microsoft Fabric](https://marketplace.visualstudio.com/items?itemName=Microsoft.fabric) — Fabric アイテムの確認・管理に便利
-
-> **ツールの有効化:** Copilot Chat を Agent モードで開き、チャット入力欄の **ツールアイコン（🔧）** → **Configure Tools** → **Built-In** のチェックボックスをすべて有効にしてください。
-
-### ターミナルコマンドの自動承認について
-
-このテンプレートでは `chat.tools.terminal.autoApprove` で **安全な読み取り系コマンドのみ** を自動承認しています:
-
-```jsonc
-"chat.tools.terminal.autoApprove": {
-    "az account get-access-token": true,  // Fabric REST API のトークン取得
-    "Get-ChildItem": true,                // ファイル一覧
-    "Test-Path": true,                    // ファイル存在確認
-    "Get-Content": true,                  // ファイル読み取り
-    "Get-Location": true                  // カレントディレクトリ確認
-}
-```
-
-リソース作成・変更を伴うコマンド（`Invoke-WebRequest`, `Invoke-RestMethod` 等）は自動承認に **含めていません**。実行時に確認ダイアログが表示されるので、内容を確認してから承認してください。
-
-> **⚠️ コマンド追加時の注意**
->
-> 自動承認するコマンドを追加する場合は、ファイルを壊さない検索・参照系のコマンドに限定してください。`rm`, `Remove-Item`, `del` など **削除系コマンドは追加しないでください**。最悪の場合、重要なファイルが消えます。
->
-> すべてのツール呼び出しを自動承認したい場合は `"chat.tools.global.autoApprove": true` を設定できますが、セキュリティ保護が無効化されるため推奨しません。
 
 ### Fabric 権限
 
 | 項目 | 要件 |
 |---|---|
-| Fabric ワークスペース | **共同作成者** 以上のロール |
+| ワークスペース作成権限 | テナント設定で **ワークスペースの作成** が許可されていること（毎回新規作成するため） |
+| 容量の割り当て権限 | 使用する Fabric 容量の **共同作成者** 以上（ワークスペースに容量を割り当てるため） |
 | Fabric 容量 | F2 以上（または Power BI Premium Per User） |
 | Fabric 容量の状態 | **起動済み（アクティブ）**であること（一時停止中はデプロイ失敗する） |
 | Microsoft Entra ID | Fabric MCP サーバーの認証に必要 |
@@ -128,7 +116,7 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
    ├── Semantic Model 作成（REST API、定義付き）
    └── Data Agent 作成（REST API、定義付き: データソース・AI インストラクション設定済み）
    ↓
-⑦ 動作検証（Fabric ポータルで代表質問を確認）
+⑥ 動作検証（Fabric ポータルで代表質問を確認）
 ```
 
 ### 始め方
@@ -199,9 +187,13 @@ Fabric 環境:
 | 制約 | 詳細 |
 |---|---|
 | Semantic Model の設定 | REST API で定義付き（definition.pbism + model.bim）で作成。テーブル・リレーションシップ・メジャーが自動設定済み |
-| Data Agent のデータソース | REST API で定義付き（datasource.json + stage_config.json）で作成。データソース・AIインストラクションが自動設定済み |
-| Data Agent のデータソース | **Semantic Model のみ**。Lakehouse 直接指定（`lakehouse-tables`）は使わない（メジャー・リレーションシップが活用されず回答精度が低下するため） |
+| Data Agent の設定 | REST API で定義付き（datasource.json + stage_config.json）で作成。データソース・AI インストラクションが自動設定済み。データソースは **Semantic Model のみ**（Lakehouse 直接指定は禁止 — メジャー・リレーションシップが活用されず回答精度が低下するため） |
 | ワークロード名・item-type | Fabric API の仕様変更に左右されるため、構築前に必ず `publicapis_list` で確認する |
+
+> **詳細な構築手順・スキーマ設計・エラー対処は以下を参照:**
+> - 構築フロー: [`.github/prompts/fabric-demo-create.prompt.md`](.github/prompts/fabric-demo-create.prompt.md)
+> - スタースキーマ設計・Data Agent 設定: [`.github/skills/fabric-demo-builder/SKILL.md`](.github/skills/fabric-demo-builder/SKILL.md)
+> - MCP ツール使い分け: [`.github/instructions/fabric-mcp.instructions.md`](.github/instructions/fabric-mcp.instructions.md)
 
 ---
 

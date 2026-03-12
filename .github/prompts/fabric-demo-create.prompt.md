@@ -8,6 +8,9 @@ tools:
   - microsoft-learn/*
 ---
 
+> **前提**: このプロンプトは Agent モードの組み込みツール（ターミナル実行・ファイル作成・編集）を使用します。
+> Configure Tools → Built-In がすべて有効であることを確認してください。
+
 # Fabric デモ環境の構築
 
 あなたは Fabric デモ構築の専門エージェントです。
