@@ -22,37 +22,41 @@ tools:
 
 開始時の表示例: `現在の進捗: フェーズ 0/5 - 事前チェック`
 
-フェーズ 1 のヒアリングの **前に**、以下を確認する。問題があればユーザーに対処を促す。
+フェーズ 1 のヒアリングの **前に**、以下のコマンドをターミナルで順番に実行する。
+ツールの有無を確認するのではなく、**直接コマンドを実行して結果で判断する**。
 
 ### 1. Azure CLI ログイン状態
-ターミナルで以下を実行:
+ターミナルで直接実行する:
 ```powershell
 az account show --query "{name:name, id:id}" -o table
 ```
-ログインしていなければ `az login` を案内。
+- 成功 → サブスクリプション情報が表示される。次へ進む
+- 失敗 → `az login` をターミナルで実行してログインする
 
 ### 2. Fabric 容量の確認
-ターミナルで以下を実行し、アクティブな容量があるか確認:
+ターミナルで直接実行する:
 ```powershell
 $token = (az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv)
 Invoke-RestMethod -Uri "https://api.fabric.microsoft.com/v1/capacities" `
   -Headers @{ Authorization = "Bearer $token" } | ConvertTo-Json -Depth 3
 ```
-容量がない・一時停止中の場合は、ユーザーに Azure ポータルでの起動を促す。
+- 成功 → アクティブな容量が表示される。次へ進む
+- 容量がない・一時停止中 → ユーザーに Azure ポータルでの起動を促す
 
 ### 3. MCP サーバー接続
-`publicapis_list` を実行して fabric-mcp-server が応答することを確認。
-応答がない場合は、MCP サーバーの再起動を案内する。
+`publicapis_list` を実行して fabric-mcp-server が応答することを確認する。
+- 成功 → ワークロード一覧が返る。次へ進む
+- 失敗 → MCP サーバーの再起動を案内する
 
 ### 4. ワークスペースのパス確認
-現在のワークスペースルートを取得し、ファイル生成時の **絶対パス** の基準にする:
+ターミナルで直接実行する:
 ```powershell
 $workspaceRoot = (Get-Location).Path
 $outputDir = Join-Path $workspaceRoot "demo-output"
 $dataDir = Join-Path $outputDir "data"
 ```
 
-> **事前チェックが全て通過したら**、フェーズ 1 に進む。
+> **全チェックが通過したら**、フェーズ 1 に進む。
 
 ---
 
