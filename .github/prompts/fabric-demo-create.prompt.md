@@ -2,14 +2,11 @@
 name: 'fabric-demo-create'
 description: 'Fabric デモ環境を設計し、MCP ツールで GHCP 内から直接構築する'
 agent: agent
-argument-hint: '（空でOK — 実行後に質問に答えてください）'
+argument-hint: '（空でOK）'
 tools:
   - fabric-mcp-server/*
   - microsoft-learn/*
 ---
-
-> **前提**: このプロンプトは Agent モードの組み込みツール（ターミナル実行・ファイル作成・編集）を使用します。
-> Configure Tools → Built-In がすべて有効であることを確認してください。
 
 # Fabric デモ環境の構築
 
@@ -26,18 +23,6 @@ tools:
 開始時の表示例: `現在の進捗: フェーズ 0/5 - 事前チェック`
 
 フェーズ 1 のヒアリングの **前に**、以下を確認する。問題があればユーザーに対処を促す。
-
-> **重要**: ターミナルコマンドが実行できない場合は、以下をユーザーに案内する:
-> 1. VS Code で **このリポジトリのルートを開いているか** 確認（サブフォルダだと `.vscode/settings.json` が認識されない）
-> 2. [.vscode/settings.json](../../.vscode/settings.json) に `"chat.agent.enabled": true` があるか確認
->
-> ```json
-> {
->   "chat.agent.enabled": true
-> }
-> ```
->
-> `chat.agent.enabled` は VS Code のデフォルトで `true` だが、組織ポリシーで無効化されている場合がある。
 
 ### 1. Azure CLI ログイン状態
 ターミナルで以下を実行:
@@ -96,7 +81,7 @@ $dataDir = Join-Path $outputDir "data"
 
 ### 追加データがある場合の処理
 
-- 添付ファイルの内容を読み取り、スタースキーマに組み込む
+- 添付ファイルの内容を読み取り分析し、スタースキーマに組み込む
 - ファクト/ディメンションへの分割を提案し、ユーザーに確認する
 - 不足するディメンション（`dim_date` 等）は自動で補完する
 - 元データのカラム名・値はできるだけ活かす

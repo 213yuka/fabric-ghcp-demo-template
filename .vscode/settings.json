@@ -8,12 +8,5 @@
   "chat.promptFilesLocations": {
     ".github/prompts": true
   },
-  "chat.agent.enabled": true,
-  "chat.tools.terminal.autoApprove": {
-    "az account get-access-token": true,
-    "Get-ChildItem": true,
-    "Test-Path": true,
-    "Get-Content": true,
-    "Get-Location": true
-  }
+  "chat.agent.enabled": true
 }
