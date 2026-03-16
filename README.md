@@ -30,7 +30,6 @@ GitHub Copilot (GHCP) + MCP サーバーで、Fabric の Data Agent デモ環境
 | GitHub Copilot Chat | 拡張機能インストール済み（Agent モード対応） |
 | Azure CLI | `az` コマンドが利用可能なこと（Fabric REST API のトークン取得に使用） |
 | Node.js | 20 LTS 以降（Fabric MCP サーバーの実行に必要） |
-| Copilot ツール | Agent モードでターミナル実行を含む **Built-In ツールが使えること** |
 
 > **VS Code の Copilot 拡張機能は必須です。**
 > GitHub Copilot の Agent モード（ターミナル実行、ファイル編集、MCP サーバー接続など）は、**GitHub Copilot Chat** 拡張機能が提供する機能です。この拡張機能がないと本テンプレートは動作しません。
